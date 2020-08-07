@@ -1,10 +1,14 @@
 # mdw-api-registry
 
-## Pre requirements
+## Requirements
+- Java: >= 1.8
+- Maven: 3.6.0
+
+## Setup
 Before to build the source code you must to run:
 
- - On Windows: `install_weblogic_lib.bat`
- - On Linux: `install_weblogic_lib.sh`
+- On Windows: `install_weblogic_lib.bat`
+- On Linux: `install_weblogic_lib.sh`
 
 ## Build
 Run `mvn package`
