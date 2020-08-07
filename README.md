@@ -1,5 +1,14 @@
 # mdw-api-registry
 
+## Pre requirements
+Before to build the source code you must to run:
+
+ - On Windows: `install_weblogic_lib.bat`
+ - On Linux: `install_weblogic_lib.sh`
+
+## Build
+Run `mvn package`
+
 ## CLI
     Usage: <main class> [-hV] [COMMAND]
     MDW APIs registry commands.
