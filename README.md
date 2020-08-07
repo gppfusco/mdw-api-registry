@@ -1,6 +1,6 @@
 # mdw-api-registry
 
-   # CLI
+## CLI
     Usage: <main class> [-hV] [COMMAND]
     MDW APIs registry commands.
       -h, --help      Show this help message and exit.
