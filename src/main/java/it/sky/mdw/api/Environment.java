@@ -5,10 +5,10 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 @JsonRootName(value="environment")
 public interface Environment {
 
-	public Registry getRegistry();
+	Registry getRegistry();
 	
-	public String getReferenceName();
+	String getReferenceName();
 	
-	public String getBaseUrl();
+	String getBaseUrl();
 	
 }

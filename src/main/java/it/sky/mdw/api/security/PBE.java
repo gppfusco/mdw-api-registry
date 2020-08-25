@@ -6,55 +6,54 @@ import java.security.Security;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
 
-public class PBE {
-	private static final String salt = "A long, but constant phrase that will be used each time as the salt.";
-	private static final int iterations = 2000;
-	private static final int keyLength = 256;
-	private static final SecureRandom random = new SecureRandom();
+/**
+ * password-based encryption
+ *
+ */
+public final class PBE {
 
-	public static void main(String [] args) throws Exception {
-		Security.insertProviderAt(new BouncyCastleProvider(), 1);
+	private final String salt = "A long, but constant phrase that will be used each time as the salt.";
+	private final int iterations = 2000;
+	private final int keyLength = 256;
+	private final SecureRandom random = new SecureRandom();
+	private String passphrase = "The quick brown fox jumped over the lazy brown dog";
+	private static PBE instance;
 
-		String passphrase = "The quick brown fox jumped over the lazy brown dog";
-		String plaintext = "hello world";
-		byte [] ciphertext = encrypt(passphrase, plaintext);
-		System.out.println(new String(ciphertext));
-		String recoveredPlaintext = decrypt(passphrase, ciphertext);
-
-		System.out.println(recoveredPlaintext);
+	private PBE() {
+		Security.insertProviderAt( new BouncyCastleProvider(), 1 );
 	}
 
-	private static byte [] encrypt(String passphrase, String plaintext) throws Exception {
+	public static PBE getInstance() {
+		if(instance == null)
+			instance = new PBE();
+		return instance;
+	}
+
+	public byte [] encrypt(byte [] plaintext) throws Exception {
 		SecretKey key = generateKey(passphrase);
 
 		Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
-		cipher.init(Cipher.ENCRYPT_MODE, key, generateIV(cipher), random);
-		return cipher.doFinal(plaintext.getBytes());
+		cipher.init(Cipher.ENCRYPT_MODE, key, random);
+		return Hex.encode(cipher.doFinal(plaintext));
 	}
 
-	private static String decrypt(String passphrase, byte [] ciphertext) throws Exception {
+	public byte [] decrypt(byte [] ciphertext) throws Exception {
 		SecretKey key = generateKey(passphrase);
 
 		Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
-		cipher.init(Cipher.DECRYPT_MODE, key, generateIV(cipher), random);
-		return new String(cipher.doFinal(ciphertext));
+		cipher.init(Cipher.DECRYPT_MODE, key, random);
+		return cipher.doFinal(Hex.decode(ciphertext));
 	}
 
-	private static SecretKey generateKey(String passphrase) throws Exception {
+	private SecretKey generateKey(String passphrase) throws Exception {
 		PBEKeySpec keySpec = new PBEKeySpec(passphrase.toCharArray(), salt.getBytes(), iterations, keyLength);
 		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWITHSHA256AND256BITAES-CBC-BC");
 		return keyFactory.generateSecret(keySpec);
-	}
-
-	private static IvParameterSpec generateIV(Cipher cipher) throws Exception {
-		byte [] ivBytes = new byte[cipher.getBlockSize()];
-		random.nextBytes(ivBytes);
-		return new IvParameterSpec(ivBytes);
 	}
 
 }

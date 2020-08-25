@@ -1,5 +1,6 @@
 package it.sky.mdw.api.application.cli;
 
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(
@@ -14,5 +15,6 @@ public class MdwApiRegistryCommand implements Runnable {
 
 	@Override
 	public void run() {
+		CommandLine.usage(MdwApiRegistryCommand.class, System.out);
 	}
 }

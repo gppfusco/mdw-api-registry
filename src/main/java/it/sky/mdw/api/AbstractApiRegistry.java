@@ -3,12 +3,15 @@ package it.sky.mdw.api;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import it.sky.mdw.api.network.NetworkNode;
 
 public abstract class AbstractApiRegistry implements ApiRegistry{
 
@@ -37,6 +40,9 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 		if(!repo_dir.exists())
 			repo_dir.mkdir();
 
+
+		RegistryContext registryContext = getRegistryContext();
+
 		for(Api<? extends ApiSpecification> api: environment.getRegistry().getApis()){
 			try {
 				String apiName = api.getName();
@@ -44,7 +50,17 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 				if(!api_dir.exists())
 					api_dir.mkdir();
 
+				IntegrationScenario intScenario = getIntegrationScenario(api);
+				api.setIntegrationScenario(intScenario);
+
 				mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + ".json"), api);
+
+				if(registryContext != null){
+					Optional<NetworkNode> apiNode = registryContext.getApiNetwork().findEntityByApiName(apiName);
+					if(apiNode.isPresent())
+						mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + "_dependencies.json"), apiNode.get());	
+				}
+
 				api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + api.getName());
 
 				ApiSpecification apiSpec = api.getApiSpecification();

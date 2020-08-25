@@ -10,17 +10,19 @@ public class MdwApiRegistryCLI {
 
 	public static void main(String[] args) {
 		DOMConfigurator.configure(System.getProperty("user.dir") + File.separator + "log4j.xml");
-		//		args = new String[]{
-		//				"run", 
-		//				"-c=esb_it_conf.json", 
-		//				"-r=ESBApiRegistry", 
-		//				"-f"
-		//				"ui",
-		//				"-p=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\mdw-api-explorer",
-		//				"-o=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\OSB_IT.json",
-		//				"-e=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\ESB_IT.json",
-		//				"-d=https://github.com/gppfusco/mdw-api-explorer/tree/master"
-		//				};
+//				args = new String[]{
+//						"run", 
+//						"-c=osb_it_conf.json", 
+//						"-r=OSBApiRegistry", 
+//						"-l"
+//						};
+//				args = new String[]{
+//						"ui", 
+//						"-o=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\mdw-api-explorer\\osb_it\\OSB_IT.json", 
+//						"-e=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\mdw-api-explorer\\esb_it\\ESB_IT.json", 
+//						"-p=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\mdw-api-explorer",
+//						"-d=https://github.com/gppfusco/mdw-api-explorer"
+//						};
 		new CommandLine(new MdwApiRegistryCommand()).execute(args);
 
 	}

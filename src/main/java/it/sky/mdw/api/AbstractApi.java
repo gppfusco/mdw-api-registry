@@ -4,6 +4,7 @@ public abstract class AbstractApi<S extends ApiSpecification> implements Api<S>{
 
 	private String endpoint, path, name, localPath;
 	private S apiSpecification;
+	private IntegrationScenario integrationScenario = IntegrationScenario.NOT_DEFINED;
 
 	public String getEndpoint() {
 		return endpoint;
@@ -49,7 +50,15 @@ public abstract class AbstractApi<S extends ApiSpecification> implements Api<S>{
 	public int hashCode() {
 		return name.hashCode();
 	}
-
+	
+	public IntegrationScenario getIntegrationScenario() {
+		return integrationScenario;
+	}
+	
+	public void setIntegrationScenario(IntegrationScenario integrationScenario) {
+		this.integrationScenario = integrationScenario;
+	}
+	
 	@Override
 	public String toString() {
 		return name + " [" + endpoint + path + "]";

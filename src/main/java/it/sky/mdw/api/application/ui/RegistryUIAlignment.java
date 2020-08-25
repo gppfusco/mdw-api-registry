@@ -22,11 +22,11 @@ public class RegistryUIAlignment {
 
 	private static Logger logger = Logger.getLogger(RegistryUIAlignment.class);
 
-	public void alignUI(Environment osbEvironment, Environment esbEvironment, String gitHubPagesDir, URL gitHubBaseDoc) throws IOException, MarkdownSerializationException{
+	public void alignUI(Environment osbEvironment, Environment esbEvironment, String explorerLocalBasePath_f, URL gitHubBaseDoc) throws IOException, MarkdownSerializationException{
 		logger.info("Starting to align registry UI...");
 		Registry osbRegistry = osbEvironment.getRegistry();
 		Registry esbRegistry = esbEvironment.getRegistry();
-		File index = new File(gitHubPagesDir + File.separator + "index.md");
+		File index = new File(explorerLocalBasePath_f + File.separator + "index.md");
 		StringBuilder builder = new StringBuilder();
 
 		builder.append(new Heading("Introduction", 3));
@@ -37,20 +37,20 @@ public class RegistryUIAlignment {
 		builder.append(new Heading("<a name=\"osb\"></a>MDW Oacle Service Bus", 3));
 		builder.append(System.lineSeparator());
 		builder.append(System.lineSeparator());
-		builder.append(createTableOfAPIs(osbRegistry, gitHubPagesDir, gitHubBaseDoc).build());
+		builder.append(createTableOfAPIs(osbRegistry, gitHubBaseDoc).build());
 		builder.append(System.lineSeparator());
 		builder.append(System.lineSeparator());
 		builder.append(new Heading("<a name=\"esb\"></a>MDW Exist Bus", 3));
 		builder.append(System.lineSeparator());
 		builder.append(System.lineSeparator());
-		builder.append(createTableOfAPIs(esbRegistry, gitHubPagesDir, gitHubBaseDoc).build());
+		builder.append(createTableOfAPIs(esbRegistry, gitHubBaseDoc).build());
 
 		FileUtils.writeStringToFile(index, builder.toString(), "UTF-8");
 
 		logger.info("UI alignment completed.");
 	}
 
-	private Table.Builder createTableOfAPIs(Registry registry, String gitHubPagesDir, URL gitHubBaseDoc){
+	private Table.Builder createTableOfAPIs(Registry registry, URL gitHubBaseDoc){
 		Table.Builder tableBuilder = new Table.Builder()
 				.withAlignments(Table.ALIGN_LEFT, Table.ALIGN_LEFT, Table.ALIGN_LEFT)
 				.addRow("API Endpoint", "Documentation");

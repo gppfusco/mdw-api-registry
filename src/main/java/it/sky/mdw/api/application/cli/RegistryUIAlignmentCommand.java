@@ -37,11 +37,11 @@ public class RegistryUIAlignmentCommand implements Runnable {
 	private String esbRegistryJsonFile;
 
 	@Option(
-			names={"-p", "--git_pages"},
-			description={"Provide the base direcotory of github pages repository."},
+			names={"-p", "--explorer_dir"},
+			description={"Provide the base direcotory to save do explorer documentation."},
 			required=true,
 			type=String.class)
-	private String githubPagesLocalRepoHome;
+	private String explorerLocalBasePath;
 
 	@Option(
 			names={"-d", "--git_doc"},
@@ -57,12 +57,13 @@ public class RegistryUIAlignmentCommand implements Runnable {
 			logger.info("Checking configuration file...");
 			File osbRegistryJsonFile_f = new File(osbRegistryJsonFile);
 			File esbRegistryJsonFile_f = new File(esbRegistryJsonFile);
-			File githubPagesLocalRepoHome_f = new File(githubPagesLocalRepoHome);
+			File explorerLocalBasePath_f = new File(explorerLocalBasePath);
 			URL githubURLBaseDoc_u = new URL(githubURLBaseDoc);
 			if(
 					(osbRegistryJsonFile_f.exists() && osbRegistryJsonFile_f.isFile())
 					&& (esbRegistryJsonFile_f.exists() && esbRegistryJsonFile_f.isFile())
-					&& (githubPagesLocalRepoHome_f.exists() && githubPagesLocalRepoHome_f.isDirectory())){
+					&& (explorerLocalBasePath_f.exists() && explorerLocalBasePath_f.isDirectory())
+					){
 				ObjectMapper mapper = new ObjectMapper();
 				mapper.enable(SerializationFeature.INDENT_OUTPUT);
 				mapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
@@ -75,8 +76,13 @@ public class RegistryUIAlignmentCommand implements Runnable {
 
 				RegistryUIAlignment uiAlignment = new RegistryUIAlignment();
 				uiAlignment.alignUI(env_osb, env_esb, 
-						githubPagesLocalRepoHome_f.getAbsolutePath(), 
+						explorerLocalBasePath_f.getAbsolutePath(), 
 						githubURLBaseDoc_u);
+			}else{
+				logger.info("Some file configurations are wrong. Check the following file path:" + 
+						System.lineSeparator() + osbRegistryJsonFile_f + System.lineSeparator() + 
+						esbRegistryJsonFile_f + System.lineSeparator() + 
+						explorerLocalBasePath_f);
 			}
 		} catch (Exception e) {
 			logger.error("", e);

@@ -20,12 +20,17 @@ import it.sky.mdw.api.AbstractApiRegistry;
 import it.sky.mdw.api.Api;
 import it.sky.mdw.api.ApiSpecification;
 import it.sky.mdw.api.Environment;
+import it.sky.mdw.api.IntegrationScenario;
 import it.sky.mdw.api.Registry;
+import it.sky.mdw.api.RegistryContext;
+import it.sky.mdw.api.security.PBE;
 import it.sky.mdw.api.Configuration;
+import it.sky.mdw.api.DefaultRegistryContext;
 
 public class ESBApiRegistry extends AbstractApiRegistry {
 
 	private static Logger logger = Logger.getLogger(ESBApiRegistry.class);
+	private RegistryContext registriContext;
 
 	private Authorization findAuthorization(Configuration configuration){
 		if(configuration.containsKey(ESBConfigurationKeys.USERNAME) &&
@@ -46,7 +51,7 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 		Authorization auth = findAuthorization(configuration);
 		logger.info("Discovering APIs.....");
 		if(auth != null){
-			String login = auth.getUsername() + ":" + auth.getPassword();
+			String login = auth.getUsername() + ":" + new String(PBE.getInstance().decrypt(auth.getPassword().getBytes()));
 			String base64login = new String(Base64.getEncoder().encode(login.getBytes()));
 			doc = Jsoup.connect(url).header("Authorization", "Basic " + base64login).get();	
 		}else{
@@ -101,6 +106,18 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 	@Override
 	public void onStoreRegistryCompleted(Environment environment, Configuration configuration) throws Exception {
 		
+	}
+	
+	@Override
+	public RegistryContext getRegistryContext() {
+		if(registriContext == null)
+			registriContext = new DefaultRegistryContext();
+		return registriContext;
+	}
+	
+	@Override
+	public IntegrationScenario getIntegrationScenario(Api<? extends ApiSpecification> api) {
+		return IntegrationScenario.DATA_MANIPULATION;
 	}
 
 }

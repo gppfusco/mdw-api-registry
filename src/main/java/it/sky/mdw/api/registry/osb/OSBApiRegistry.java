@@ -1,8 +1,6 @@
 package it.sky.mdw.api.registry.osb;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,6 +10,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,7 +28,6 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 import org.apache.log4j.Logger;
 
@@ -36,11 +35,16 @@ import com.bea.wli.sb.management.configuration.ALSBConfigurationMBean;
 
 import it.sky.mdw.api.AbstractApiRegistry;
 import it.sky.mdw.api.Api;
+import it.sky.mdw.api.ApiNetwork;
 import it.sky.mdw.api.ApiSpecification;
-import it.sky.mdw.api.Environment;
-import it.sky.mdw.api.Registry;
 import it.sky.mdw.api.Configuration;
 import it.sky.mdw.api.ConfigurationKeys;
+import it.sky.mdw.api.Environment;
+import it.sky.mdw.api.IntegrationScenario;
+import it.sky.mdw.api.Registry;
+import it.sky.mdw.api.RegistryContext;
+import it.sky.mdw.api.network.NetworkNode;
+import it.sky.mdw.api.security.PBE;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 
@@ -71,7 +75,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 			env_base_url = conf.getProperty(OSBConfigurationKeys.ENV_BASE_URL);
 	}
 
-	private MBeanServerConnection getMBeanServerConnection() throws IOException, MalformedURLException, NamingException {
+	private MBeanServerConnection getMBeanServerConnection() throws Exception {
 		try {
 			InitialContext ctx = new InitialContext();
 			MBeanServer server = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
@@ -83,14 +87,14 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 	}
 
 	private JMXConnector initRemoteConnection(String hostname, int port, String username,
-			String password) throws IOException, MalformedURLException {
+			String password) throws Exception {
 		String jndiroot = "/jndi/";
 		String mserver = "weblogic.management.mbeanservers.domainruntime";
 		JMXServiceURL serviceURL =
 				new JMXServiceURL("t3", hostname, port, jndiroot + mserver);
 		Hashtable<String, String> h = new Hashtable<String, String>();
 		h.put(Context.SECURITY_PRINCIPAL, username);
-		h.put(Context.SECURITY_CREDENTIALS, password);
+		h.put(Context.SECURITY_CREDENTIALS, new String(PBE.getInstance().decrypt(password.getBytes())));
 		h.put(JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES, "weblogic.management.remote");
 		return JMXConnectorFactory.connect(serviceURL, h);
 	}
@@ -105,6 +109,11 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 			logger.error("", e);
 			return null;
 		}
+	}
+
+	@Override
+	public RegistryContext getRegistryContext() {
+		return OSBRegistryContext.getInstance();
 	}
 
 	@Override
@@ -135,7 +144,9 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		String objectNamePattern =
 				domain + ":" + "Type=ResourceConfigurationMBean,*";
 
-		ExecutorService service = Executors.newWorkStealingPool();
+		OSBRegistryContext.getInstance().initializeContext(alsbConfigurationMBean, connection);
+
+		ExecutorService executor = Executors.newWorkStealingPool();
 
 		MapOfOSBReference mapOfRefs = MapOfOSBReference.getInstance();
 		mapOfRefs.onStart(alsbConfigurationMBean);
@@ -144,19 +155,58 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		Set<ObjectName> osbResourceConfigurations =
 				connection.queryNames(new ObjectName(objectNamePattern), null);
 
+		ApiNetwork osbNetwork = getRegistryContext().getApiNetwork();
+
 		Collection<Future<Api<? extends ApiSpecification>>> osbProxyProcessors = 
 				new ArrayList<Future<Api<? extends ApiSpecification>>>();
+
+		Collection<Future<Void>> osbPipelineProcessors = 
+				new ArrayList<Future<Void>>();
+
 		for(ObjectName osbResourceConfiguration: osbResourceConfigurations) {
 			String resourceName = osbResourceConfiguration.getKeyProperty("Name");
+			//						if(
+			//								resourceName.equals("Pipeline$BlueBirdProject$CPQ$getCatalogue$pipeline$PL_INTERNAL_CPQ_GET_PROMOTION_DURATION") 
+			//								resourceName.equals("Pipeline$SalesforceProject$pipeline$PL_SF_MAIN_OSB_TO_BPEL") ||
+			//								resourceName.equals("Pipeline$CPQProject$sellingConfirmation_v2$pipeline$PL_INTERNAL_CHECK_ORDER_VALIDATION") ||
+			//								resourceName.equals("ProxyService$SalesforceProject$proxy$Local$PS_LOCAL_PL_SF_MAIN_OSB_TO_BPEL") ||
+			//								resourceName.equals("PipelineTemplate$MDW_CO$templates$pipeline$PL_WS_SERVICE_ROUTING_TEMPLATE_VALIDATION") ||
+			//								resourceName.equals("Pipeline$CPQProject$sellingConfirmation_v2$pipeline$PL_INTERNAL_SELLING_CONFIRMATION_ENQUEUE") ||
+			//								resourceName.equals("Pipeline$CPQProject$sellingConfirmation_v2$pipeline$PL_REST_SELLING_CONFIRMATION") ||
+			//								resourceName.equals("ProxyService$CPQProject$sellingConfirmation_v2$proxy$PS_WS_CPQ_SELLING_CONFIRMATION")
+			//								){
 			if(resourceName.startsWith("ProxyService$")){
 				try {
-					osbProxyProcessors.add(	service.submit(
-							new OSBProxyProcessor(osbResourceConfiguration, connection, alsbConfigurationMBean, env_base_url)));
+					osbProxyProcessors.add(
+							executor.submit(
+									new OSBProxyProcessor(osbResourceConfiguration, env_base_url)));
 				} catch (Exception e) {
 					logger.error("", e);
 					continue;
 				}
 			}
+			else if(resourceName.startsWith("Pipeline$") || resourceName.startsWith("PipelineTemplate$")){
+				try {
+					osbPipelineProcessors.add(
+							executor.submit(new OSBPipelineProcessor(osbResourceConfiguration)));
+				} catch (Exception e) {
+					logger.error("", e);
+					continue;
+				}
+			}
+			else if(resourceName.startsWith("BusinessService$")){
+				Properties properties = new Properties();
+				properties.put("nodeType", "BusinessService");
+
+				String normalizedName = resourceName.replaceAll("\\W", "/");
+				osbNetwork.addEntity(normalizedName, osbResourceConfiguration, Optional.of(properties));	
+			}
+			else {
+				String normalizedName = resourceName.replaceAll("\\W", "/");
+				osbNetwork.addEntity(normalizedName, osbResourceConfiguration, Optional.empty());	
+			}
+			//						}
+
 		}
 
 		osbProxyProcessors.forEach(new Consumer<Future<Api<? extends ApiSpecification>>>() {
@@ -173,16 +223,15 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 
 		});
 
-		service.shutdown();
+		executor.shutdown();
 		try {
-			service.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 		} catch (InterruptedException e) {
 			logger.error("", e);
 		}
 
 		Registry repository = new Registry();
 		repository.setApis(apis);
-
 		logger.info("Discovering APIs..... Completed");
 		return repository;
 	}
@@ -204,40 +253,94 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		if(repo_dir.isDirectory()){
 			for(Api<? extends ApiSpecification> api: environment.getRegistry().getApis()){
 				try {
-					File file = new File(dir_path_str + File.separator + api.getLocalPath());
-					if(file.isDirectory()){
-						String path = file.getName();
-						String split = path.contains("_proxy_") ? "_proxy_" :
-							path.contains("_Proxy_") ? "_Proxy_" :
-								path.contains("_PS_") ? "_PS_" :
-									"";
-						if(split.length()>0){
-							String[] names = path.split(split);
-							String finalPath = repo_dir.getAbsolutePath() + File.separator+
-									names[0].replace("_", File.separator) + File.separator + names[1];
-							File newFile = new File(finalPath);
-							Files.createDirectories(Paths.get(finalPath));
-							logger.debug("Created directory: " + newFile.getName());
-							Path srcPath = file.toPath();
-							Path destPath = newFile.toPath();
-							Files.walkFileTree(srcPath, new CopyDirVisitor(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING));
-
-							Files.walk(srcPath)
-							.sorted(Comparator.reverseOrder())
-							.map(Path::toFile)
-							.forEach(File::delete);
-							logger.debug("Deleted directory: " + path);
-
-							api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + 
-									finalPath.replace(repo_dir.getAbsolutePath()+File.separator, ""));
-						}
-					}
+					compactApiDirectory(api, repo_dir);
 				} catch (Exception e) {
 					logger.error("", e);
 					continue;
 				}
 			}
-		}		
+		}
+	}
+
+	private void compactApiDirectory(Api<? extends ApiSpecification> api, File repo_dir) throws Exception {
+		File file = new File(dir_path_str + File.separator + api.getLocalPath());
+		if(file.isDirectory()){
+			String path = file.getName();
+			String split = path.contains("_proxy_") ? "_proxy_" :
+				path.contains("_Proxy_") ? "_Proxy_" :
+					path.contains("_PS_") ? "_PS_" :
+						"";
+			if(split.length()>0){
+				String[] names = path.split(split);
+				String finalPath = repo_dir.getAbsolutePath() + File.separator+
+						names[0].replace("_", File.separator) + File.separator + names[1];
+				File newFile = new File(finalPath);
+				Files.createDirectories(Paths.get(finalPath));
+				logger.debug("Created directory: " + newFile.getName());
+				Path srcPath = file.toPath();
+				Path destPath = newFile.toPath();
+				Files.walkFileTree(srcPath, new CopyDirVisitor(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING));
+
+				Files.walk(srcPath)
+				.sorted(Comparator.reverseOrder())
+				.map(Path::toFile)
+				.forEach(File::delete);
+				logger.debug("Deleted directory: " + path);
+
+				api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + 
+						finalPath.replace(repo_dir.getAbsolutePath()+File.separator, ""));
+			}
+		}
+	}
+
+	@Override
+	public IntegrationScenario getIntegrationScenario(Api<? extends ApiSpecification> api) {
+		RegistryContext registryContext = getRegistryContext();
+		if(registryContext != null){
+			try {
+				if(api.getPath().equals("/services/mdw/salesforce/cpq/carts"))
+					System.out.println();
+
+				NetworkNode apiNode = registryContext.getApiNetwork().findEntityByApiName(api.getName()).orElse(null);
+				if(apiNode != null){
+
+					Properties nodeProp = apiNode.getProperties();
+					String service_type = (String) nodeProp.getOrDefault("service-type", "no_type");
+
+					Collection<NetworkNode> connections = apiNode.getAllSuccessors();
+					int numberOfBusinessServices = 0;
+					Collection<String> processedBS = new ArrayList<>();
+					for(NetworkNode t: connections){
+						String label = t.getLabel();
+						Properties prop = t.getProperties();
+						String nodeType = (String) prop.getOrDefault("nodeType", "no_type");
+						if(nodeType.equals("BusinessService") && 
+								!label.contains("BS_LOG_ENQUEUE") &&
+								!label.contains("BS_JMS_ENQUEUE_LOG_MDW_SERVICE") && 
+								!label.contains("BS_SQL_INSERT_OR_UPDATE_SLAVE_NOTIFICATION_TRACKING")){
+							if(!processedBS.contains(label)){
+								processedBS.add(label);
+								numberOfBusinessServices++;
+							}
+						}
+					}
+
+					if(numberOfBusinessServices >= 2)
+						return IntegrationScenario.ORCHESTRATION;
+					else if(service_type.equals("Messaging"))
+						return IntegrationScenario.PROXY;
+					else
+						return IntegrationScenario.DATA_MANIPULATION;
+				}
+
+
+			} catch (Exception e) {
+				logger.error("", e);
+				return IntegrationScenario.NOT_DEFINED;
+			}
+		}
+
+		return IntegrationScenario.NOT_DEFINED;
 	}
 
 }

@@ -6,6 +6,8 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -30,6 +32,8 @@ import com.bea.wli.sb.management.configuration.ALSBConfigurationMBean;
 import it.sky.mdw.api.Api;
 import it.sky.mdw.api.ApiSpecification;
 import it.sky.mdw.api.DefaultApiSpecification;
+import it.sky.mdw.api.MessagingApi;
+import it.sky.mdw.api.MessagingApiSpec;
 import it.sky.mdw.api.RestApi;
 import it.sky.mdw.api.RestApiSpec;
 import it.sky.mdw.api.SoapApi;
@@ -44,19 +48,20 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 	private String environmentHostName;
 	private MBeanServerConnection connection;
 	private ALSBConfigurationMBean alsbConfigurationMBean;
+	private String fullApiName;
 
-	public OSBProxyProcessor(ObjectName osbResourceConfiguration, MBeanServerConnection connection, ALSBConfigurationMBean alsbConfigurationMBean, String environmentHostName) {
+	public OSBProxyProcessor(ObjectName osbResourceConfiguration, String environmentHostName) {
 		super();
 		this.osbResourceConfiguration = osbResourceConfiguration;
 		this.environmentHostName = environmentHostName;
-		this.connection = connection;
-		this.alsbConfigurationMBean = alsbConfigurationMBean;
+		this.connection = OSBRegistryContext.getInstance().getConnection();
+		this.alsbConfigurationMBean = OSBRegistryContext.getInstance().getAlsbConfigurationMBean();
 	}
 
 
 	public Api<? extends ApiSpecification> call() throws Exception {
 		String resourceName = osbResourceConfiguration.getKeyProperty("Name");
-		String normalizedProxyName = resourceName.replaceAll("ProxyService\\W", "").replaceAll("\\W", "/");
+		String normalizedName = resourceName.replaceAll("ProxyService\\W", "").replaceAll("\\W", "/");
 
 		if(resourceName.startsWith("ProxyService$")){
 			try {
@@ -74,7 +79,7 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 						(String)transportconfiguration.get("transport-type");
 				String url = (String)transportconfiguration.get("url");
 
-				logger.debug("  Configuration of " + normalizedProxyName +
+				logger.debug("  Configuration of " + normalizedName +
 						":" + " service-type=" + servicetype +
 						", transport-type=" + transporttype +
 						", url=" + url);
@@ -82,9 +87,17 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 				String[] dependencies =
 						(String[])metadata.get("dependencies");
 
+				Properties properties = new Properties();
+				properties.put("transport-type", transporttype);
+				properties.put("service-type", servicetype);
+				properties.put("nodeType", "Proxy");
+
 				if(transporttype.equals("http")){
-					String fullApiName = normalizedProxyName.replaceAll("/", "_");
+					fullApiName = normalizedName.replaceAll("/", "_");
 					String apiPath = ("/" + url).replace("//" ,"/");
+
+					OSBRegistryContext.getInstance().getApiNetwork().addEntity(
+							fullApiName, osbResourceConfiguration, Optional.of(properties));	
 
 					if(servicetype.equals("SOAP")){
 						SoapApi api = new SoapApi();
@@ -92,7 +105,7 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 						api.setName(fullApiName);
 						api.setPath(apiPath);
 
-						ApiSpecification apiSpec_ = exploreDependencies(api.getEndpoint(), dependencies);
+						ApiSpecification apiSpec_ = exploreDependencies(api.getEndpoint(), dependencies, true);
 						if(apiSpec_ instanceof SoapApiSpec){
 							SoapApiSpec apiSpec = (SoapApiSpec) apiSpec_;
 							apiSpec.setApiSpecEndpoint(environmentHostName + apiPath +"?WSDL");
@@ -101,13 +114,13 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 
 						return api;
 					}
-					if(servicetype.equals("REST")){
+					else if(servicetype.equals("REST")){
 						RestApi api = new RestApi();
 						api.setEndpoint(environmentHostName);
 						api.setName(fullApiName);
 						api.setPath(apiPath);
 
-						ApiSpecification apiSpec_ = exploreDependencies(api.getEndpoint(), dependencies);
+						ApiSpecification apiSpec_ = exploreDependencies(api.getEndpoint(), dependencies, true);
 						if(apiSpec_ instanceof RestApiSpec){
 							RestApiSpec apiSpec = (RestApiSpec) apiSpec_;
 							apiSpec.setApiSpecEndpoint(environmentHostName + apiPath +"?WADL");
@@ -116,6 +129,34 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 
 						return api;
 					}
+					else if(servicetype.equals("Messaging")){
+						MessagingApi api = new MessagingApi();
+						api.setEndpoint(environmentHostName);
+						api.setName(fullApiName);
+						api.setPath(apiPath);
+						api.setApiSpecification(new MessagingApiSpec(api.getEndpoint()));
+						exploreDependencies(
+								api.getEndpoint(), 
+								dependencies, false);
+
+						return api;
+					}
+					else{
+						OSBRegistryContext.getInstance().getApiNetwork().addEntity(
+								resourceName.replaceAll("\\W", "/"), osbResourceConfiguration,
+								Optional.of(properties));
+						exploreDependencies(
+								resourceName.replaceAll("\\W", "/"), 
+								dependencies, false);
+					}
+				}else
+				{
+					OSBRegistryContext.getInstance().getApiNetwork().addEntity(
+							resourceName.replaceAll("\\W", "/"), osbResourceConfiguration,
+							Optional.of(properties));
+					exploreDependencies(
+							resourceName.replaceAll("\\W", "/"), 
+							dependencies, false);
 				}
 			} catch (Exception e) {
 				logger.error("", e);
@@ -125,44 +166,60 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 		return null;
 	}
 
-	private DefaultApiSpecification exploreDependencies(String apiEndpoint, String[] dependencies) throws Exception {
+	private DefaultApiSpecification exploreDependencies(String apiEndpoint, String[] dependencies, boolean exportReferenceBytes) throws Exception {
 		SoapApiSpec soapApiSpec = null;
 		RestApiSpec restApiSpec = null;
 		for (int i = 0; i < dependencies.length; i++) {
 			String dependency = dependencies[i];
 			logger.debug("Dependency found - " + dependency + "\n");
 			if(dependency.startsWith("WSDL")){
-				String normalizedWsdlName = "wsdl_" +dependency.replaceAll("WSDL\\W", "").replaceAll("\\W", "/");
-				logger.debug("Asking for Ref: " + normalizedWsdlName);
-				SimpleEntry<Ref, byte[]> wsdlRef = findRef(normalizedWsdlName);
-				logger.debug("Retrieved Ref: " + normalizedWsdlName);
-				if(wsdlRef != null){
-					byte[] bytes = wsdlRef.getValue();
-					soapApiSpec = (SoapApiSpec) extractWsdl(apiEndpoint, bytes, true);
-					List<XSDExternalRef> xsdRefs = soapApiSpec.getXsdExternalRef();
-					for(XSDExternalRef xsdRef: xsdRefs){
-						String basePath = xsdRef.getXsdBasePath();
-						logger.debug("Asking for Ref: " + "xsd_"+basePath);
-						SimpleEntry<Ref, byte[]> xsd = findRef("xsd_"+basePath);
-						logger.debug("Retrieved Ref: " + "xsd_"+basePath);
-						if(xsd!=null){
-							xsdRef.setXsdBasePath("/" + xsdRef.getXsdBasePath());
-							byte[] xsdExportedBytes = xsd.getValue();
-							byte[] xsdBytes = extractXsdSchema(xsdExportedBytes);
-							xsdRef.setXsdSchema(xsdBytes);
+				if(exportReferenceBytes){
+					String normalizedWsdlName = "wsdl_" +dependency.replaceAll("WSDL\\W", "").replaceAll("\\W", "/");
+					logger.debug("Asking for Ref: " + normalizedWsdlName);
+					SimpleEntry<Ref, byte[]> wsdlRef = findRef(normalizedWsdlName);
+					logger.debug("Retrieved Ref: " + normalizedWsdlName);
+					if(wsdlRef != null){
+						byte[] bytes = wsdlRef.getValue();
+						soapApiSpec = (SoapApiSpec) extractWsdl(apiEndpoint, bytes, true);
+						List<XSDExternalRef> xsdRefs = soapApiSpec.getXsdExternalRef();
+						for(XSDExternalRef xsdRef: xsdRefs){
+							String basePath = xsdRef.getXsdBasePath();
+							logger.debug("Asking for Ref: " + "xsd_"+basePath);
+							SimpleEntry<Ref, byte[]> xsd = findRef("xsd_"+basePath);
+							logger.debug("Retrieved Ref: " + "xsd_"+basePath);
+							if(xsd!=null){
+								xsdRef.setXsdBasePath("/" + xsdRef.getXsdBasePath());
+								byte[] xsdExportedBytes = xsd.getValue();
+								byte[] xsdBytes = extractXsdSchema(xsdExportedBytes);
+								xsdRef.setXsdSchema(xsdBytes);
+							}
 						}
 					}
+				}else{
+					String depNormalizedName = dependency.replaceAll("\\W", "/");
+					OSBRegistryContext.getInstance().getApiNetwork().addConnection(apiEndpoint, depNormalizedName);
 				}
 			}
 			if(dependency.startsWith("WADL")){
-				String normalizedWsdlName = "wadl_" + dependency.replaceAll("WADL\\W", "").replaceAll("\\W", "/");
-				logger.debug("Asking for Ref: " + normalizedWsdlName);
-				SimpleEntry<Ref, byte[]> wsdlRef = findRef(normalizedWsdlName);
-				logger.debug("Retrieved Ref: " + normalizedWsdlName);
-				if(wsdlRef != null){
-					byte[] bytes = wsdlRef.getValue();
-					restApiSpec = (RestApiSpec) extractWsdl(apiEndpoint, bytes, false);
+				if(exportReferenceBytes){
+					String normalizedWsdlName = "wadl_" + dependency.replaceAll("WADL\\W", "").replaceAll("\\W", "/");
+					logger.debug("Asking for Ref: " + normalizedWsdlName);
+					SimpleEntry<Ref, byte[]> wsdlRef = findRef(normalizedWsdlName);
+					logger.debug("Retrieved Ref: " + normalizedWsdlName);
+					if(wsdlRef != null){
+						byte[] bytes = wsdlRef.getValue();
+						restApiSpec = (RestApiSpec) extractWsdl(apiEndpoint, bytes, false);
+					}
+				}else{
+					String depNormalizedName = dependency.replaceAll("\\W", "/");
+					OSBRegistryContext.getInstance().getApiNetwork().addConnection(apiEndpoint, depNormalizedName);
 				}
+			}else{
+				String depNormalizedName = dependency.replaceAll("\\W", "/");
+				if(exportReferenceBytes)
+					OSBRegistryContext.getInstance().getApiNetwork().addConnection(fullApiName, depNormalizedName);
+				else
+					OSBRegistryContext.getInstance().getApiNetwork().addConnection(apiEndpoint, depNormalizedName);
 			}
 		}
 

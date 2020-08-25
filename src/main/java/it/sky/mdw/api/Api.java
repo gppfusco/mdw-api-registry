@@ -10,21 +10,27 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 		property = "type")
 @JsonSubTypes({ 
 	@Type(value = SoapApi.class, name = "SOAP"), 
-	@Type(value = RestApi.class, name = "REST") 
+	@Type(value = RestApi.class, name = "REST") , 
+	@Type(value = MessagingApi.class, name = "Messaging") 
 })
 public interface Api<S extends ApiSpecification> {
 
-	public String getEndpoint();
+	String getEndpoint();
 
-	public String getPath();
-	
-	public String getLocalPath();
-	
-	public void setLocalPath(String localPath);
+	String getPath();
 
-	public String getName();
+	String getLocalPath();
 
-	public S getApiSpecification();
+	void setLocalPath(String localPath);
 
-	public void setApiSpecification(S apiSpecification);
+	String getName();
+
+	S getApiSpecification();
+
+	void setApiSpecification(S apiSpecification);
+
+	IntegrationScenario getIntegrationScenario();
+
+	void setIntegrationScenario(IntegrationScenario integrationScenario);
+
 }
