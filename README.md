@@ -24,7 +24,7 @@ Run `mvn package`
       show  Show useful information about commands.enter code here
 
 ## Commands:
-### Run
+### Reg
 
     Usage: <main class> run [[-f] [-l]] [-hV] -c=<configurationFile>
                             -r=<registryType>
@@ -50,8 +50,8 @@ Run `mvn package`
       -h, --help      Show this help message and exit.
       -o, --osb=<osbRegistryJsonFile>
                       Provide the JSON registry file for OSB.
-      -p, --git_pages=<githubPagesLocalRepoHome>
-                      Provide the base direcotory of github pages repository.
+      -p, --explorer_dir=<explorerLocalBasePath>
+                      Provide the base direcotory to save do explorer documentation.
       -V, --version   Print version information and exit.
 
 ### Show
