@@ -20,8 +20,8 @@ Run `mvn package`
       -V, --version   Print version information and exit.
     Commands:
       reg   Create a registry for all APIs from server.
-      ui    Create index.md for github pages.
-      show  Show useful information about commands.enter code here
+      ui    Create index.md for explorer documentation.
+      show  Show useful information about commands.
 
 ## Commands:
 ### Reg
@@ -41,8 +41,8 @@ Run `mvn package`
 ### UI
 
     Usage: <main class> ui [-hV] -d=<githubURLBaseDoc> -e=<esbRegistryJsonFile>
-                           -o=<osbRegistryJsonFile> -p=<githubPagesLocalRepoHome>
-    Create index.md for github pages.
+                           -o=<osbRegistryJsonFile> -p=<explorerLocalBasePath>
+    Create index.md for explorer documentation.
       -d, --git_doc=<githubURLBaseDoc>
                       Provide the base URL for github documentation repository.
       -e, --esb=<esbRegistryJsonFile>
