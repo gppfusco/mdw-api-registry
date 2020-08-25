@@ -19,14 +19,14 @@ Run `mvn package`
       -h, --help      Show this help message and exit.
       -V, --version   Print version information and exit.
     Commands:
-      run   Create a registry for all APIs from server.
+      reg   Create a registry for all APIs from server.
       ui    Create index.md for github pages.
       show  Show useful information about commands.enter code here
 
 ## Commands:
 ### Reg
 
-    Usage: <main class> run [[-f] [-l]] [-hV] -c=<configurationFile>
+    Usage: <main class> reg [[-f] [-l]] [-hV] -c=<configurationFile>
                             -r=<registryType>
     Create a registry for all APIs from server.
       -c, --conf=<configurationFile>
