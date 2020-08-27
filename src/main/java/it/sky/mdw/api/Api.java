@@ -33,4 +33,18 @@ public interface Api<S extends ApiSpecification> {
 
 	void setIntegrationScenario(IntegrationScenario integrationScenario);
 
+	String getAuthentication();
+
+	void setAuthentication(String auth);
+	
+	boolean isCompressionSupported();
+	
+	boolean isBufferingSupported();
+	
+	void setCompressionSupported(boolean isCompressionSupported);
+	
+	void setBufferingSupported(boolean isBufferingSupported);
+	
+	static final String DEFAULT_AUTHENTICATION_TYPE = "Undefined";
+
 }

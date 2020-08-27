@@ -50,9 +50,6 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 				if(!api_dir.exists())
 					api_dir.mkdir();
 
-				IntegrationScenario intScenario = getIntegrationScenario(api);
-				api.setIntegrationScenario(intScenario);
-
 				mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + ".json"), api);
 
 				if(registryContext != null){
@@ -110,20 +107,20 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 
 		fos.flush();
 		fos.close();
-		List<XSDExternalRef> xsdRefs = apiSpec.getXsdExternalRef();
+		List<XSDSchema> xsdRefs = apiSpec.getXsdSchemas();
 		if(xsdRefs.size() > 0){
 			writeXsdExternalRefs(xsdRefs, api_dir, xsd_dir_str);
 		}
 	}
 
-	private void writeXsdExternalRefs(List<XSDExternalRef> xsdRefs, File api_dir, String xsd_dir_str) {
+	private void writeXsdExternalRefs(List<XSDSchema> xsdRefs, File api_dir, String xsd_dir_str) {
 		File xsd_dir = new File(api_dir.getAbsolutePath() + File.separator + xsd_dir_str);
 		if(!xsd_dir.exists())
 			xsd_dir.mkdir();
 
-		for(XSDExternalRef xsdRef: xsdRefs){
+		for(XSDSchema xsdRef: xsdRefs){
 			try {
-				String basePath = xsdRef.getXsdBasePath();
+				String basePath = xsdRef.getXsdPath();
 				String[] splits = basePath.split("/");
 				String xsdFileName = splits[splits.length-1];
 				if(!xsdFileName.endsWith(".xsd"))

@@ -47,6 +47,10 @@ public class MapOfOSBReference {
 				mapOfRef.put("xsd_" + ref.getFullName(), ref);
 				logger.debug("Found reference: " + ref.getFullName());
 			}
+			if (typeId.equalsIgnoreCase("ProxyService")){
+				mapOfRef.put("proxy_" + ref.getFullName(), ref);
+				logger.debug("Found reference: " + ref.getFullName());
+			}
 		}
 		logger.info("Processing Refs... completed");
 		logger.info("Total number of Refs found: " + mapOfRef.size());

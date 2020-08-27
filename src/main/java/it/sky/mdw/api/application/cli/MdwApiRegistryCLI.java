@@ -4,6 +4,7 @@ import java.io.File;
 
 import org.apache.log4j.xml.DOMConfigurator;
 
+import it.sky.mdw.api.application.cli.command.MdwApiRegistryCommand;
 import picocli.CommandLine;
 
 public class MdwApiRegistryCLI {
@@ -11,11 +12,15 @@ public class MdwApiRegistryCLI {
 	public static void main(String[] args) {
 		DOMConfigurator.configure(System.getProperty("user.dir") + File.separator + "log4j.xml");
 //				args = new String[]{
-//						"run", 
+//						"reg", 
 //						"-c=osb_it_conf.json", 
 //						"-r=OSBApiRegistry", 
 //						"-l"
 //						};
+				args = new String[]{
+						"pbe",
+						"tuxedo123"
+						};
 //				args = new String[]{
 //						"ui", 
 //						"-o=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\mdw-api-explorer\\osb_it\\OSB_IT.json", 

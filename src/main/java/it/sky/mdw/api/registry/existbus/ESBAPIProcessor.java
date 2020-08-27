@@ -16,7 +16,7 @@ import it.sky.mdw.api.Api;
 import it.sky.mdw.api.ApiSpecification;
 import it.sky.mdw.api.SoapApi;
 import it.sky.mdw.api.SoapApiSpec;
-import it.sky.mdw.api.XSDExternalRef;
+import it.sky.mdw.api.XSDSchema;
 
 public class ESBAPIProcessor implements Callable<Api<? extends ApiSpecification>>{
 
@@ -48,7 +48,7 @@ public class ESBAPIProcessor implements Callable<Api<? extends ApiSpecification>
 	private static void parseApiWsdl(Api<? extends ApiSpecification> api) {
 		ApiSpecification apiSpec = api.getApiSpecification();
 
-		List<XSDExternalRef> xsdRefs = new ArrayList<XSDExternalRef>();
+		List<XSDSchema> xsdRefs = new ArrayList<XSDSchema>();
 		logger.debug("Fetching api spec --> " + apiSpec.getApiSpecEndpoint());
 		try {
 			Document wsdl = Jsoup.parse(new URL(apiSpec.getApiSpecEndpoint()).openStream(), "UTF-8", "", Parser.xmlParser());
@@ -56,14 +56,15 @@ public class ESBAPIProcessor implements Callable<Api<? extends ApiSpecification>
 			Elements xsdImportTags = wsdl.getElementsByTag("xsd:import");
 			if(xsdImportTags.size()>0){
 				for(Element xsdImportTag: xsdImportTags){
-					XSDExternalRef xsdRef = new XSDExternalRef(api.getEndpoint(), xsdImportTag.attr("schemaLocation"), xsdImportTag.attr("namespace"));
-					Document xsd = Jsoup.parse(new URL(xsdRef.getXsdEndpoint()).openStream(), "UTF-8", "", Parser.xmlParser());
+					String xsdPath = xsdImportTag.attr("schemaLocation");
+					XSDSchema xsdRef = new XSDSchema(xsdPath, xsdImportTag.attr("namespace"));
+					Document xsd = Jsoup.parse(new URL(api.getEndpoint() + xsdPath).openStream(), "UTF-8", "", Parser.xmlParser());
 					xsdRef.setXsdSchema(xsd.toString().getBytes());
 					xsdRefs.add(xsdRef);
 				}
 			}
 
-			apiSpec.setXsdExternalRef(xsdRefs);
+			apiSpec.setXsdSchemas(xsdRefs);
 		} catch (Exception e) {
 			logger.error("", e);
 		}		

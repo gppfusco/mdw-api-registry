@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class DefaultApiSpecification implements ApiSpecification {
 
 	private String apiSpecEndpoint;
-	private List<XSDExternalRef> xsdExternalRef;
+	private List<XSDSchema> xsdSchemas;
 
 	@JsonIgnore
 	private byte[] apiSpecContent;
@@ -20,15 +20,15 @@ public class DefaultApiSpecification implements ApiSpecification {
 	public DefaultApiSpecification(String apiSpecEndpoint) {
 		super();
 		this.apiSpecEndpoint = apiSpecEndpoint;
-		this.xsdExternalRef = new ArrayList<XSDExternalRef>();
+		this.xsdSchemas = new ArrayList<XSDSchema>();
 	}
 
-	public List<XSDExternalRef> getXsdExternalRef() {
-		return xsdExternalRef;
+	public List<XSDSchema> getXsdSchemas() {
+		return xsdSchemas;
 	}
-
-	public void setXsdExternalRef(List<XSDExternalRef> xsdExternalRef) {
-		this.xsdExternalRef = xsdExternalRef;
+	
+	public void setXsdSchemas(List<XSDSchema> xsdSchemas) {
+		this.xsdSchemas = xsdSchemas;
 	}
 
 	public String getApiSpecEndpoint() {

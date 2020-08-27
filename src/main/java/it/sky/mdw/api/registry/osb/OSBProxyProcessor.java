@@ -38,7 +38,7 @@ import it.sky.mdw.api.RestApi;
 import it.sky.mdw.api.RestApiSpec;
 import it.sky.mdw.api.SoapApi;
 import it.sky.mdw.api.SoapApiSpec;
-import it.sky.mdw.api.XSDExternalRef;
+import it.sky.mdw.api.XSDSchema;
 
 public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecification>>{
 
@@ -97,9 +97,10 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 					String apiPath = ("/" + url).replace("//" ,"/");
 
 					OSBRegistryContext.getInstance().getApiNetwork().addEntity(
-							fullApiName, osbResourceConfiguration, Optional.of(properties));	
+							fullApiName, osbResourceConfiguration, Optional.of(properties));
 
 					if(servicetype.equals("SOAP")){
+
 						SoapApi api = new SoapApi();
 						api.setEndpoint(environmentHostName);
 						api.setName(fullApiName);
@@ -111,6 +112,8 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 							apiSpec.setApiSpecEndpoint(environmentHostName + apiPath +"?WSDL");
 							api.setApiSpecification(apiSpec);
 						}
+
+						enrichApiInfo("proxy_"+normalizedName, api);
 
 						return api;
 					}
@@ -127,6 +130,8 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 							api.setApiSpecification(apiSpec);
 						}
 
+						enrichApiInfo("proxy_"+normalizedName, api);
+
 						return api;
 					}
 					else if(servicetype.equals("Messaging")){
@@ -138,6 +143,8 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 						exploreDependencies(
 								api.getEndpoint(), 
 								dependencies, false);
+
+						enrichApiInfo("proxy_"+normalizedName, api);
 
 						return api;
 					}
@@ -166,6 +173,62 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 		return null;
 	}
 
+	private void enrichApiInfo(String normalizedName, Api<? extends ApiSpecification> api) throws Exception {
+		SimpleEntry<Ref, byte[]> proxyRef = findRef(normalizedName);
+		if(proxyRef != null){
+			byte[] bytes = proxyRef.getValue();
+			ZipInputStream zipStream = new ZipInputStream(new ByteArrayInputStream(bytes));
+			ZipEntry entry;
+			while((entry = zipStream.getNextEntry())!=null){
+				String entryName = entry.getName().toLowerCase();
+				if(entryName.endsWith(".proxyservice")){
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					byte[] buf = new byte[1024 * 4];
+					int len = zipStream.read(buf);
+					while (len > 0) {
+						baos.write(buf, 0, len);
+						len = zipStream.read(buf);
+					}
+
+					DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+					DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+					Document doc = dBuilder.parse(new ByteArrayInputStream(baos.toByteArray()));
+					doc.getDocumentElement().normalize();
+
+					XPath xPath =  XPathFactory.newInstance().newXPath();
+					Node infoNode;
+					try {
+						infoNode = (Node) xPath.compile("/proxyServiceEntry/endpointConfig"
+								+ "/provider-specific/inbound-properties/client-authentication").evaluate(doc, XPathConstants.NODE);
+						if(infoNode != null && infoNode.hasAttributes())
+							api.setAuthentication(infoNode.getAttributes().getNamedItem("xsi:type").getTextContent());
+					} catch (Exception e) {
+					}
+
+					try {
+						infoNode = (Node) xPath.compile("/proxyServiceEntry/endpointConfig"
+								+ "/provider-specific/compression/compression-support").evaluate(doc, XPathConstants.NODE);
+						if(infoNode != null)
+							api.setCompressionSupported(
+									Boolean.valueOf(infoNode.getTextContent()));
+					} catch (Exception e) {
+					}
+
+					try {
+						infoNode = (Node) xPath.compile("/proxyServiceEntry/endpointConfig"
+								+ "/provider-specific/compression/compression-buffering").evaluate(doc, XPathConstants.NODE);
+						if(infoNode != null)
+							api.setBufferingSupported(
+									Boolean.valueOf(infoNode.getTextContent()));
+					} catch (Exception e) {
+					}
+				}
+			}
+		}
+
+	}
+
+
 	private DefaultApiSpecification exploreDependencies(String apiEndpoint, String[] dependencies, boolean exportReferenceBytes) throws Exception {
 		SoapApiSpec soapApiSpec = null;
 		RestApiSpec restApiSpec = null;
@@ -181,14 +244,14 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 					if(wsdlRef != null){
 						byte[] bytes = wsdlRef.getValue();
 						soapApiSpec = (SoapApiSpec) extractWsdl(apiEndpoint, bytes, true);
-						List<XSDExternalRef> xsdRefs = soapApiSpec.getXsdExternalRef();
-						for(XSDExternalRef xsdRef: xsdRefs){
-							String basePath = xsdRef.getXsdBasePath();
+						List<XSDSchema> xsdRefs = soapApiSpec.getXsdSchemas();
+						for(XSDSchema xsdRef: xsdRefs){
+							String basePath = xsdRef.getXsdPath();
 							logger.debug("Asking for Ref: " + "xsd_"+basePath);
 							SimpleEntry<Ref, byte[]> xsd = findRef("xsd_"+basePath);
 							logger.debug("Retrieved Ref: " + "xsd_"+basePath);
 							if(xsd!=null){
-								xsdRef.setXsdBasePath("/" + xsdRef.getXsdBasePath());
+								xsdRef.setXsdPath("/" + xsdRef.getXsdPath());
 								byte[] xsdExportedBytes = xsd.getValue();
 								byte[] xsdBytes = extractXsdSchema(xsdExportedBytes);
 								xsdRef.setXsdSchema(xsdBytes);
@@ -286,18 +349,17 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 						NodeList schemaRef = (NodeList) xPath.compile(typeOfEntry + "/dependencies" + schemaRefPathExpression).evaluate(
 								doc, XPathConstants.NODESET);
 
-						List<XSDExternalRef> xsdRefs = new ArrayList<XSDExternalRef>();
+						List<XSDSchema> xsdRefs = new ArrayList<XSDSchema>();
 						for (int i = 0; i < schemaRef.getLength(); i++) {
 							Node nNode = schemaRef.item(i);
-							XSDExternalRef xsdRef = new XSDExternalRef(
-									apiEndpoint, 
+							XSDSchema xsdRef = new XSDSchema(
 									nNode.getAttributes().getNamedItem("ref").getTextContent(), 
 									nNode.getAttributes().getNamedItem("namespace").getTextContent());
 
 							xsdRefs.add(xsdRef);
 						}
 
-						spec.setXsdExternalRef(xsdRefs);
+						spec.setXsdSchemas(xsdRefs);
 					}
 				}
 

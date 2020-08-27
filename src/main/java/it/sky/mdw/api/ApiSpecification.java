@@ -8,9 +8,9 @@ public interface ApiSpecification {
 	
 	void setApiSpecEndpoint(String apiSpecEndpoint);
 	
-	List<XSDExternalRef> getXsdExternalRef();
+	List<XSDSchema> getXsdSchemas();
 	
-	void setXsdExternalRef(List<XSDExternalRef> xsdExternalRef);
+	void setXsdSchemas(List<XSDSchema> xsdExternalRef);
 	
 	byte[] getApiSpecContent();
 	

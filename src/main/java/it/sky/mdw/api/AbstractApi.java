@@ -2,9 +2,10 @@ package it.sky.mdw.api;
 
 public abstract class AbstractApi<S extends ApiSpecification> implements Api<S>{
 
-	private String endpoint, path, name, localPath;
+	private String endpoint, path, name, localPath, authentication = DEFAULT_AUTHENTICATION_TYPE;
 	private S apiSpecification;
 	private IntegrationScenario integrationScenario = IntegrationScenario.NOT_DEFINED;
+	private boolean isCompressionSupported = false, isBufferingSupported = false;
 
 	public String getEndpoint() {
 		return endpoint;
@@ -57,6 +58,30 @@ public abstract class AbstractApi<S extends ApiSpecification> implements Api<S>{
 	
 	public void setIntegrationScenario(IntegrationScenario integrationScenario) {
 		this.integrationScenario = integrationScenario;
+	}
+	
+	public String getAuthentication() {
+		return authentication;
+	}
+	
+	public void setAuthentication(String authentication) {
+		this.authentication = authentication;
+	}
+	
+	public boolean isBufferingSupported() {
+		return isBufferingSupported;
+	}
+	
+	public boolean isCompressionSupported() {
+		return isCompressionSupported;
+	}
+	
+	public void setCompressionSupported(boolean isCompressionSupported) {
+		this.isCompressionSupported = isCompressionSupported;
+	}
+	
+	public void setBufferingSupported(boolean isBufferingSupported) {
+		this.isBufferingSupported = isBufferingSupported;
 	}
 	
 	@Override

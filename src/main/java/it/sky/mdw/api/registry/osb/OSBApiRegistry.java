@@ -165,16 +165,6 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 
 		for(ObjectName osbResourceConfiguration: osbResourceConfigurations) {
 			String resourceName = osbResourceConfiguration.getKeyProperty("Name");
-			//						if(
-			//								resourceName.equals("Pipeline$BlueBirdProject$CPQ$getCatalogue$pipeline$PL_INTERNAL_CPQ_GET_PROMOTION_DURATION") 
-			//								resourceName.equals("Pipeline$SalesforceProject$pipeline$PL_SF_MAIN_OSB_TO_BPEL") ||
-			//								resourceName.equals("Pipeline$CPQProject$sellingConfirmation_v2$pipeline$PL_INTERNAL_CHECK_ORDER_VALIDATION") ||
-			//								resourceName.equals("ProxyService$SalesforceProject$proxy$Local$PS_LOCAL_PL_SF_MAIN_OSB_TO_BPEL") ||
-			//								resourceName.equals("PipelineTemplate$MDW_CO$templates$pipeline$PL_WS_SERVICE_ROUTING_TEMPLATE_VALIDATION") ||
-			//								resourceName.equals("Pipeline$CPQProject$sellingConfirmation_v2$pipeline$PL_INTERNAL_SELLING_CONFIRMATION_ENQUEUE") ||
-			//								resourceName.equals("Pipeline$CPQProject$sellingConfirmation_v2$pipeline$PL_REST_SELLING_CONFIRMATION") ||
-			//								resourceName.equals("ProxyService$CPQProject$sellingConfirmation_v2$proxy$PS_WS_CPQ_SELLING_CONFIRMATION")
-			//								){
 			if(resourceName.startsWith("ProxyService$")){
 				try {
 					osbProxyProcessors.add(
@@ -205,8 +195,6 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 				String normalizedName = resourceName.replaceAll("\\W", "/");
 				osbNetwork.addEntity(normalizedName, osbResourceConfiguration, Optional.empty());	
 			}
-			//						}
-
 		}
 
 		osbProxyProcessors.forEach(new Consumer<Future<Api<? extends ApiSpecification>>>() {
@@ -214,8 +202,11 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 				Api<? extends ApiSpecification> api;
 				try {
 					api = t.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-					if(api!=null && api.getApiSpecification()!=null)
+					if(api!=null && api.getApiSpecification()!=null){
+						IntegrationScenario intScenario = getIntegrationScenario(api);
+						api.setIntegrationScenario(intScenario);
 						apis.add(api);
+					}
 				} catch (Exception e) {
 					logger.error("", e);
 				} 
@@ -298,9 +289,6 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		RegistryContext registryContext = getRegistryContext();
 		if(registryContext != null){
 			try {
-				if(api.getPath().equals("/services/mdw/salesforce/cpq/carts"))
-					System.out.println();
-
 				NetworkNode apiNode = registryContext.getApiNetwork().findEntityByApiName(api.getName()).orElse(null);
 				if(apiNode != null){
 
