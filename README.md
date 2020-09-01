@@ -43,34 +43,34 @@ Run `mvn package`
 Example of configuration file for `OSBApiRegistry`:
 ```json
 {
-  "env_dir_name" : "osb_it",
-  "port" : "port",
-  "username" : "username",
-  "env_host" : "env_host",
-  "base_dir_path" : "C:\\path-to-api-explorer",
-  "wsdl_dir_name" : "wsdl",
-  "env_name" : "OSB_IT",
-  "wadl_dir_name" : "wadl",
-  "repository_dir_name" : "repo",
-  "password" : "password",
-  "host" : "host",
-  "xsd_dir_name" : "xsd"
+	"env_dir_name": "osb_it",
+	"port": "port",
+	"username": "username",
+	"env_host": "env_host",
+	"base_dir_path": "C:\\path-to-api-explorer",
+	"wsdl_dir_name": "wsdl",
+	"env_name": "OSB_IT",
+	"wadl_dir_name": "wadl",
+	"repository_dir_name": "repo",
+	"password": "password",
+	"host": "host",
+	"xsd_dir_name": "xsd"
 }
 ```
 Example of configuration file for `ESBApiRegistry`:
 ```json
 {
-  "env_dir_name" : "esb_it",
-  "url" : "https://wssvil.sky.it/wsexistbus/web?cmd=managementwsdl",
-  "username" : "username",
-  "env_host" : "https://wssvil.sky.it/wsexistbus",
-  "base_dir_path" : "C:\\path-to-api-explorer",
-  "wsdl_dir_name" : "wsdl",
-  "env_name" : "ESB_IT",
-  "wadl_dir_name" : "wadl",
-  "repository_dir_name" : "repo",
-  "password" : "password",
-  "xsd_dir_name" : "xsd"
+	"env_dir_name": "esb_it",
+	"url": "url",
+	"username": "username",
+	"env_host": "env_host",
+	"base_dir_path": "C:\\path-to-api-explorer",
+	"wsdl_dir_name": "wsdl",
+	"env_name": "ESB_IT",
+	"wadl_dir_name": "wadl",
+	"repository_dir_name": "repo",
+	"password": "password",
+	"xsd_dir_name": "xsd"
 }
 ```
 ### Report
