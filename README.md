@@ -73,6 +73,7 @@ Example of configuration file for `ESBApiRegistry`:
 	"xsd_dir_name": "xsd"
 }
 ```
+> All paths are relative to `base_dir_path` field path.
 ### Report
 
 	Usage: <main class> report [-hV] -c=<reportConfiguration>
@@ -91,6 +92,7 @@ Example of report configuration file:
 	"esbRegistryFile": "esb_it\\ESB_IT.json"
 }
 ```
+> All paths are relative to `explorerLocalBasePath` field path.
 ### Repository
 
 	Usage: <main class> repository [-hV] [-a=ACTION] -c=<configurationFile>
@@ -114,6 +116,7 @@ Example of repository configuration file:
 	]
 }
 ```
+> All paths are relative to `directory` field path.
 ### Passwod-based-encryption
 
 	Usage: <main class> pbe [-hV] <plainText>
