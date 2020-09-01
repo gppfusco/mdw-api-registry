@@ -11,4 +11,6 @@ public interface Environment {
 	
 	String getBaseUrl();
 	
+	String getEnvDir();
+	
 }

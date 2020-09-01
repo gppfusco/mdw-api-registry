@@ -8,8 +8,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import it.sky.mdw.api.ApiNetwork;
-
 public class DefaultApiNetwork implements ApiNetwork {
 
 	private Map<String, DefaultNetworkNode> network;

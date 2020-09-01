@@ -1,7 +1,6 @@
 package it.sky.mdw.api.application.cli.command;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -83,14 +82,7 @@ public class RegistryCommand implements Runnable {
 					if(registryClass == null)
 						logger.error("Invalid registry type: " + registryType);
 					else{
-						Configuration conf = new Configuration();
-						if(confFile.getName().endsWith(".json"))
-							conf = new Configuration().loadFromJSON(new FileInputStream(confFile));
-						else if(confFile.getName().endsWith(".xml"))
-							conf.loadFromXML(new FileInputStream(confFile));
-						else
-							conf.load(new FileInputStream(confFile));
-
+						Configuration conf = Configuration.load(confFile);
 
 						ApiRegistry apiRegistry = registryClass.newInstance();
 

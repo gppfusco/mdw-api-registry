@@ -1,5 +1,6 @@
 package it.sky.mdw.api;
 
+import it.sky.mdw.api.network.ApiNetwork;
 import it.sky.mdw.api.network.DefaultApiNetwork;
 
 public class DefaultRegistryContext implements RegistryContext {

@@ -77,8 +77,11 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 					Api<? extends ApiSpecification> api;
 					try {
 						api = t.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-						if(api!=null)
+						if(api!=null){
+							IntegrationScenario intScenario = getIntegrationScenario(api);
+							api.setIntegrationScenario(intScenario);
 							apis.add(api);
+						}
 					} catch (Exception e) {
 						logger.error("", e);
 					} 
@@ -105,16 +108,16 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 
 	@Override
 	public void onStoreRegistryCompleted(Environment environment, Configuration configuration) throws Exception {
-		
+
 	}
-	
+
 	@Override
 	public RegistryContext getRegistryContext() {
 		if(registriContext == null)
 			registriContext = new DefaultRegistryContext();
 		return registriContext;
 	}
-	
+
 	@Override
 	public IntegrationScenario getIntegrationScenario(Api<? extends ApiSpecification> api) {
 		return IntegrationScenario.DATA_MANIPULATION;

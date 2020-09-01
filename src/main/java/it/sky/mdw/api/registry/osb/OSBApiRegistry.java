@@ -35,7 +35,6 @@ import com.bea.wli.sb.management.configuration.ALSBConfigurationMBean;
 
 import it.sky.mdw.api.AbstractApiRegistry;
 import it.sky.mdw.api.Api;
-import it.sky.mdw.api.ApiNetwork;
 import it.sky.mdw.api.ApiSpecification;
 import it.sky.mdw.api.Configuration;
 import it.sky.mdw.api.ConfigurationKeys;
@@ -43,6 +42,7 @@ import it.sky.mdw.api.Environment;
 import it.sky.mdw.api.IntegrationScenario;
 import it.sky.mdw.api.Registry;
 import it.sky.mdw.api.RegistryContext;
+import it.sky.mdw.api.network.ApiNetwork;
 import it.sky.mdw.api.network.NetworkNode;
 import it.sky.mdw.api.security.PBE;
 import weblogic.management.jmx.MBeanServerInvocationHandler;

@@ -8,9 +8,10 @@ import picocli.CommandLine.Command;
 		mixinStandardHelpOptions=true,
 		subcommands={
 				RegistryCommand.class,
-				RegistryUIAlignmentCommand.class,
+				RegistryReportCommand.class,
 				PBECommand.class,
-				RunCommandHelper.class
+				RepositoryCommand.class,
+				ShowInfoCommand.class
 		})
 public class MdwApiRegistryCommand implements Runnable {
 

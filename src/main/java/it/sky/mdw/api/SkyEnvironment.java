@@ -2,7 +2,7 @@ package it.sky.mdw.api;
 
 public class SkyEnvironment implements Environment{
 
-	private String referenceName, baseUrl;
+	private String referenceName, baseUrl, envDir;
 	private Registry registry;
 	
 	public SkyEnvironment() {
@@ -30,6 +30,14 @@ public class SkyEnvironment implements Environment{
 
 	public void setRegistry(Registry registry) {
 		this.registry = registry;
+	}
+	
+	public String getEnvDir() {
+		return envDir;
+	}
+	
+	public void setEnvDir(String envDir) {
+		this.envDir = envDir;
 	}
 
 }

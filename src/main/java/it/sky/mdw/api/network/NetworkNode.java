@@ -15,5 +15,6 @@ public interface NetworkNode {
 
 	Collection<NetworkNode> getAllSuccessors();
 
+	// return all connected nodes with depth equal to 1
 	Collection<NetworkNode> getClosestSuccessors();
 }
