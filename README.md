@@ -1,3 +1,4 @@
+
 # mdw-api-registry
 
 ## Requirements
@@ -15,16 +16,18 @@ Run `mvn package`
 
 ## CLI
     Usage: <main class> [-hV] [COMMAND]
-    MDW APIs registry commands.
-      -h, --help      Show this help message and exit.
-      -V, --version   Print version information and exit.
-    Commands:
-      reg   Create a registry for all APIs from server.
-      ui    Create index.md for explorer documentation.
-      show  Show useful information about commands.
+	MDW APIs registry commands.
+	  -h, --help      Show this help message and exit.
+	  -V, --version   Print version information and exit.
+	Commands:
+	  registry    Create a registry for all APIs from server.
+	  report      Create index.md for explorer documentation.
+	  pbe         Encrypt a given text.
+	  repository  Initialize and update a repository for the Api registries.
+	  info        Show useful information about commands.
 
 ## Commands:
-### Reg
+### Registry
 
     Usage: <main class> reg [[-f] [-l]] [-hV] -c=<configurationFile>
                             -r=<registryType>
@@ -37,31 +40,96 @@ Run `mvn package`
       -r, --registry=<registryType>
                       Provide the registry type for APIs discovering.
       -V, --version   Print version information and exit.
+Example of configuration file for `OSBApiRegistry`:
+```json
+{
+  "env_dir_name" : "osb_it",
+  "port" : "port",
+  "username" : "username",
+  "env_host" : "env_host",
+  "base_dir_path" : "C:\\path-to-api-explorer",
+  "wsdl_dir_name" : "wsdl",
+  "env_name" : "OSB_IT",
+  "wadl_dir_name" : "wadl",
+  "repository_dir_name" : "repo",
+  "password" : "password",
+  "host" : "host",
+  "xsd_dir_name" : "xsd"
+}
+```
+Example of configuration file for `ESBApiRegistry`:
+```json
+{
+  "env_dir_name" : "esb_it",
+  "url" : "https://wssvil.sky.it/wsexistbus/web?cmd=managementwsdl",
+  "username" : "username",
+  "env_host" : "https://wssvil.sky.it/wsexistbus",
+  "base_dir_path" : "C:\\path-to-api-explorer",
+  "wsdl_dir_name" : "wsdl",
+  "env_name" : "ESB_IT",
+  "wadl_dir_name" : "wadl",
+  "repository_dir_name" : "repo",
+  "password" : "password",
+  "xsd_dir_name" : "xsd"
+}
+```
+### Report
 
-### UI
+	Usage: <main class> report [-hV] -c=<reportConfiguration>
+	Create index.md for explorer documentation.
+	  -c, --conf=<reportConfiguration>
+					  Provide the report configuration file.
+	  -h, --help      Show this help message and exit.
+	  -V, --version   Print version information and exit.
+	  
+Example of report configuration file:
+```json
+{
+	"explorerLocalBasePath": "C:\\path-to-api-explorer",
+	"githubURLBaseDoc": "https://github.com/<username>/branch-name",
+	"osbRegistryFile" : "osb_it\\OSB_IT.json",
+	"esbRegistryFile": "esb_it\\ESB_IT.json"
+}
+```
+### Repository
 
-    Usage: <main class> ui [-hV] -d=<githubURLBaseDoc> -e=<esbRegistryJsonFile>
-                           -o=<osbRegistryJsonFile> -p=<explorerLocalBasePath>
-    Create index.md for explorer documentation.
-      -d, --git_doc=<githubURLBaseDoc>
-                      Provide the base URL for github documentation repository.
-      -e, --esb=<esbRegistryJsonFile>
-                      Provide the JSON registry file for ESB.
-      -h, --help      Show this help message and exit.
-      -o, --osb=<osbRegistryJsonFile>
-                      Provide the JSON registry file for OSB.
-      -p, --explorer_dir=<explorerLocalBasePath>
-                      Provide the base direcotory to save do explorer documentation.
-      -V, --version   Print version information and exit.
+	Usage: <main class> repository [-hV] [-a=ACTION] -c=<configurationFile>
+	Initialize and update a repository for the Api registries.
+	  -a, --action=ACTION   <init> or <update>
+	  -c, --conf=<configurationFile>
+							Provide configuration file.
+	  -h, --help            Show this help message and exit.
+	  -V, --version         Print version information and exit.
 
-### Show
+Example of repository configuration file:
+```json
+{
+	"directory": "C:\\path-to-api-explorer",
+	"uri": "https://github.com/<username>/branch-name",
+	"username": "username",
+	"password": "password",
+	"environmentDirEntries": [
+		"osb_it\\OSB_IT.json",
+		"esb_it\\ESB_IT.json"
+	]
+}
+```
+### Passwod-based-encryption
 
-    Usage: <main class> show [-hrV] [-c=FORMAT]
-    Show useful information about commands.
-      -c, --conf=FORMAT   Provide an example of configuration file. The FORMAT
-                            parameter must be <json> or <xml> or <txt>
-      -h, --help          Show this help message and exit.
-      -r, --registry      Provide the available api registry types. For each
-                            registry type show an example of configuration.
-      -V, --version       Print version information and exit.
+	Usage: <main class> pbe [-hV] <plainText>
+	Encrypt a given text.
+		  <plainText>
+	  -h, --help        Show this help message and exit.
+	  -V, --version     Print version information and exit. 
+	  
+### Info
+
+	Usage: <main class> info [-hrV] [-c=FORMAT]
+	Show useful information about commands.
+	  -c, --conf=FORMAT   Provide an example of configuration file. The FORMAT
+							parameter must be <json> or <xml> or <txt>
+	  -h, --help          Show this help message and exit.
+	  -r, --registry      Provide the available api registry types. For each
+							registry type show an example of configuration.
+	  -V, --version       Print version information and exit.
 
