@@ -7,6 +7,8 @@ import org.apache.log4j.Logger;
 
 import it.sky.mdw.api.repository.GitApiRepository;
 import it.sky.mdw.api.repository.RepositoryConfiguration;
+import it.sky.mdw.api.repository.SkyRepositoryConfiguration;
+import it.sky.mdw.api.util.ConfigurationSerializationUtil;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -14,7 +16,7 @@ import picocli.CommandLine.Option;
 @Command(
 		description={"Initialize and update a repository for the Api registries."},
 		mixinStandardHelpOptions=true,
-		name="repo")
+		name="repository")
 public class RepositoryCommand implements Runnable {
 
 	private static final String INIT = "init";
@@ -43,7 +45,8 @@ public class RepositoryCommand implements Runnable {
 			if(confFile.exists()){
 				if(confFile.isFile()){
 					if(action!=null){
-						RepositoryConfiguration conf = RepositoryConfiguration.loadFromJSON(new FileInputStream(confFile));
+						RepositoryConfiguration conf = ConfigurationSerializationUtil.loadFromJSON(
+								new FileInputStream(confFile), SkyRepositoryConfiguration.class);
 						if(action.equalsIgnoreCase(INIT)){
 							GitApiRepository repo = new GitApiRepository();
 							repo.init(conf);

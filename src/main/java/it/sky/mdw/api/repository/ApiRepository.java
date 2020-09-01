@@ -2,7 +2,7 @@ package it.sky.mdw.api.repository;
 
 public interface ApiRepository {
 
-	void init(RepositoryConfiguration repositoryConfiguration) throws Exception;
+	<C extends RepositoryConfiguration> void init(C repositoryConfiguration) throws Exception;
 
 	void update() throws Exception;
 

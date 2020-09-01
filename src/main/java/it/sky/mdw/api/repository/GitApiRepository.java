@@ -21,11 +21,16 @@ public class GitApiRepository implements ApiRepository {
 
 	private static Logger logger = Logger.getLogger(GitApiRepository.class);
 	private Git repo;
-	private RepositoryConfiguration repositoryConfiguration;
+	private SkyRepositoryConfiguration repositoryConfiguration;
 	private UsernamePasswordCredentialsProvider credentialProvider;
 
 	@Override
-	public void init(RepositoryConfiguration repositoryConfiguration) throws Exception {
+	public <C extends RepositoryConfiguration> void init(C repositoryConfiguration) throws Exception {
+		SkyRepositoryConfiguration skyRepoConf = (SkyRepositoryConfiguration) repositoryConfiguration;
+		init(skyRepoConf);
+	}
+
+	private void init(SkyRepositoryConfiguration repositoryConfiguration) throws Exception {
 		this.repositoryConfiguration = repositoryConfiguration;
 		credentialProvider = new UsernamePasswordCredentialsProvider(repositoryConfiguration.getUsername(), 
 				new String(PBE.getInstance().decrypt(
@@ -117,7 +122,7 @@ public class GitApiRepository implements ApiRepository {
 
 	@Override
 	public void update() throws Exception {
-		for(String envDir: repositoryConfiguration.getEnvironmentDirEntry()){
+		for(String envDir: repositoryConfiguration.getEnvironmentDirEntries()){
 			try {
 				Environment env = EnvironmentSerializationUtil.unmarshall(new File(
 						repositoryConfiguration.getDirectory() + File.separator + envDir));

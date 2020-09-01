@@ -8,7 +8,7 @@ import picocli.CommandLine.Command;
 		mixinStandardHelpOptions=true,
 		subcommands={
 				RegistryCommand.class,
-				RegistryReportCommand.class,
+				ReportCommand.class,
 				PBECommand.class,
 				RepositoryCommand.class,
 				ShowInfoCommand.class
