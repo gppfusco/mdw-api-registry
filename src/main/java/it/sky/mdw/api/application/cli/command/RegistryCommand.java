@@ -36,7 +36,7 @@ public class RegistryCommand implements Runnable {
 
 	@Option(
 			names={"-r", "--registry"},
-			description={"Provide the registry type for APIs discovering."},
+			description={"Provide the registry type for APIs discovering. Example: <OSBApiRegistry> <ESBApiRegistry>."},
 			required=true,
 			type=String.class)
 	private String registryType;

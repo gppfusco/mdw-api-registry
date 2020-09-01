@@ -11,23 +11,31 @@ public class MdwApiRegistryCLI {
 
 	public static void main(String[] args) {
 		DOMConfigurator.configure(System.getProperty("user.dir") + File.separator + "log4j.xml");
-//				args = new String[]{
-//						"reg", 
-//						"-c=osb_it_conf.json", 
-//						"-r=OSBApiRegistry", 
-//						"-l"
-//						};
-				args = new String[]{
-						"pbe",
-						"tuxedo123"
-						};
-//				args = new String[]{
-//						"ui", 
-//						"-o=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\mdw-api-explorer\\osb_it\\OSB_IT.json", 
-//						"-e=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\mdw-api-explorer\\esb_it\\ESB_IT.json", 
-//						"-p=C:\\Users\\fuscogiu\\Documents\\Sky\\git_mdw_explorer\\mdw-api-explorer",
-//						"-d=https://github.com/gppfusco/mdw-api-explorer"
-//						};
+		//		args = new String[]{
+		//				"reg", 
+		//				"-c=esb_it_conf.json", 
+		//				"-r=ESBApiRegistry", 
+		//				"-f"
+		//		};
+		//		args = new String[]{
+		//				"reg", 
+		//				"-c=osb_it_conf.json", 
+		//				"-r=OSBApiRegistry", 
+		//				"-f"
+		//		};
+		//		args = new String[]{
+		//				"repo",
+		//				"-c=repository.properties"
+		//		};
+		//		args = new String[]{
+		//				"pbe",
+		//				"a text"
+		//		};
+		//		args = new String[]{
+		//				"report", 
+		//				"-c=report.json"
+		//		};
+		//		args = new String[]{"registry", "-h"};
 		new CommandLine(new MdwApiRegistryCommand()).execute(args);
 
 	}
