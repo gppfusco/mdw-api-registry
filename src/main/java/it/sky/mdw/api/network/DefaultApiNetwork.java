@@ -12,7 +12,7 @@ public class DefaultApiNetwork implements ApiNetwork {
 	private Map<String, DefaultNetworkNode> network;
 
 	public DefaultApiNetwork() {
-		network = new ConcurrentHashMap<>();
+		network = new ConcurrentHashMap<String, DefaultNetworkNode>();
 	}
 
 	public NetworkNode addEntity(String label, Object value, Properties properties) {
@@ -32,7 +32,6 @@ public class DefaultApiNetwork implements ApiNetwork {
 		}
 	}
 
-	@Override
 	public void addConnection(String entityLabelIn, String entityLabelOut) {
 		Objects.requireNonNull(entityLabelIn);
 		Objects.requireNonNull(entityLabelOut);
@@ -52,7 +51,6 @@ public class DefaultApiNetwork implements ApiNetwork {
 
 	}
 
-	@Override
 	public NetworkNode findEntityByApiName(String entityLabel){
 		Objects.requireNonNull(entityLabel);
 		if(network.containsKey(entityLabel))
@@ -71,10 +69,9 @@ public class DefaultApiNetwork implements ApiNetwork {
 		}
 	}
 
-	@Override
 	public Collection<NetworkNode> findEntityConnections(String entityLabel) {
 		Objects.requireNonNull(entityLabel);
-		Collection<NetworkNode> connections = new ArrayList<>();
+		Collection<NetworkNode> connections = new ArrayList<NetworkNode>();
 		NetworkNode node = findEntityByApiName(entityLabel);
 		if(node!=null){
 			connections.addAll(node.getAllSuccessors());
@@ -82,7 +79,6 @@ public class DefaultApiNetwork implements ApiNetwork {
 		return connections;
 	}
 
-	@Override
 	public Collection<NetworkNode> findEntityConnections(NetworkNode entity) {
 		Objects.requireNonNull(entity);
 		return entity.getAllSuccessors();

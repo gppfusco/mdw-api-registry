@@ -11,7 +11,6 @@ public class DefaultRegistryContext implements RegistryContext {
 		this.apiNetwork = new DefaultApiNetwork();
 	}
 	
-	@Override
 	public final ApiNetwork getApiNetwork() {
 		return apiNetwork;
 	}

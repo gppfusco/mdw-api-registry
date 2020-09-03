@@ -19,7 +19,6 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 	protected boolean isEncryptionEnabled = false;
 	protected int nThreads = 16;
 
-	@Override
 	public Registry initializeRegistry(Configuration configuration) throws Exception {
 		Objects.requireNonNull(configuration, "Configuration cannot be null.");
 		if(configuration.containsKey(ConfigurationKeys.ENCRYPTION_ENABLED))
@@ -31,7 +30,6 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 
 	protected abstract Registry doInitializeRegistry(Configuration configuration) throws Exception;
 
-	@Override
 	public void storeFullRegistry(Environment environment, Configuration configuration) throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -159,7 +157,6 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 
 	public abstract void onStoreRegistryCompleted(Environment environment, Configuration configuration) throws Exception;
 
-	@Override
 	public void storeRegistryAPIs(Environment environment, Configuration configuration) throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);

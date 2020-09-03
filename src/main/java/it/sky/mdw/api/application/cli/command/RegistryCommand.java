@@ -60,7 +60,6 @@ public class RegistryCommand implements Runnable {
 		static boolean lightMode;
 	}
 
-	@Override
 	public void run() {
 		try {
 			logger.info("Checking configuration file...");

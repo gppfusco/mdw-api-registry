@@ -15,7 +15,6 @@ import picocli.CommandLine.Command;
 		})
 public class MdwApiRegistryCommand implements Runnable {
 
-	@Override
 	public void run() {
 		CommandLine.usage(MdwApiRegistryCommand.class, System.out);
 	}

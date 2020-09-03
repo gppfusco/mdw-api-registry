@@ -46,7 +46,6 @@ public class ShowInfoCommand implements Runnable {
 			required=false)
 	private boolean registry;
 
-	@Override
 	public void run() {
 		if(registry){
 			Reflections reflections = new Reflections(new ConfigurationBuilder()
@@ -95,7 +94,6 @@ public class ShowInfoCommand implements Runnable {
 	}
 
 	static class ShowConfigOption implements IParameterConsumer {
-		@Override
 		public void consumeParameters(Stack<String> arg0, ArgSpec arg1, CommandSpec arg2) {
 			if(!arg0.isEmpty() && arg1.paramLabel().equals("FORMAT")){
 				String arg = arg0.pop();

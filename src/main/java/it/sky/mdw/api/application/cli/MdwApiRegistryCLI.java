@@ -10,6 +10,7 @@ public class MdwApiRegistryCLI {
 
 	public static void main(String[] args) {
 		LoggerConfigurator.configureLogger(System.getProperty("user.dir") + File.separator + "log4j.xml");
+		System.setProperty("https.protocols", "TLSv1.1,TLSv1.2");
 //				args = new String[]{
 //						"registry", 
 //						"-c=esb_it_conf.json", 
@@ -22,11 +23,11 @@ public class MdwApiRegistryCLI {
 //						"-r=OSBApiRegistry", 
 //						"-f"
 //				};
-				args = new String[]{
-						"repository",
-						"-c=repository.json",
-						"-a=init"
-				};
+//				args = new String[]{
+//						"repository",
+//						"-c=repository.json",
+//						"-a=init"
+//				};
 //				args = new String[]{
 //						"repository",
 //						"-c=repository.json",

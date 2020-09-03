@@ -37,7 +37,6 @@ public class RepositoryCommand implements Runnable {
 			paramLabel="ACTION")
 	private String action;
 
-	@Override
 	public void run() {
 		try {
 			logger.info("Checking configuration file...");

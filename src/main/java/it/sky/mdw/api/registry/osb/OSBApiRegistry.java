@@ -109,7 +109,6 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		}
 	}
 
-	@Override
 	public RegistryContext getRegistryContext() {
 		return OSBRegistryContext.getInstance();
 	}
@@ -289,7 +288,6 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		}
 	}
 	
-	@Override
 	public IntegrationScenario getIntegrationScenario(Api<? extends ApiSpecification> api) {
 		RegistryContext registryContext = getRegistryContext();
 		if(registryContext != null){
@@ -302,7 +300,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 
 					Collection<NetworkNode> connections = apiNode.getAllSuccessors();
 					int numberOfBusinessServices = 0;
-					Collection<String> processedBS = new ArrayList<>();
+					Collection<String> processedBS = new ArrayList<String>();
 					for(NetworkNode t: connections){
 						String label = t.getLabel();
 						Properties prop = t.getProperties();

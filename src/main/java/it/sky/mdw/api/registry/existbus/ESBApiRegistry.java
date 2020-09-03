@@ -110,14 +110,12 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 
 	}
 
-	@Override
 	public RegistryContext getRegistryContext() {
 		if(registriContext == null)
 			registriContext = new DefaultRegistryContext();
 		return registriContext;
 	}
 
-	@Override
 	public IntegrationScenario getIntegrationScenario(Api<? extends ApiSpecification> api) {
 		return IntegrationScenario.DATA_MANIPULATION;
 	}

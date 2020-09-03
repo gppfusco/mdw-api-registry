@@ -2,7 +2,6 @@ package it.sky.mdw.api.repository;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.eclipse.jgit.api.AddCommand;
@@ -11,7 +10,6 @@ import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PushCommand;
-import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -28,7 +26,6 @@ public class GitApiRepository implements ApiRepository {
 	private UsernamePasswordCredentialsProvider credentialProvider;
 	private String branch;
 
-	@Override
 	public <C extends RepositoryConfiguration> void init(C repositoryConfiguration) throws Exception {
 		SkyRepositoryConfiguration skyRepoConf = (SkyRepositoryConfiguration) repositoryConfiguration;
 		init(skyRepoConf);
@@ -51,6 +48,7 @@ public class GitApiRepository implements ApiRepository {
 //			boolean existsBranch = repo.branchList().call().contains(branch);
 //			if(!existsBranch){
 //				// create branch
+//				logger.info("Trying to create branch: " + branch);
 //				repo.branchCreate()
 //				.setName(branch)
 //				.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
@@ -58,6 +56,7 @@ public class GitApiRepository implements ApiRepository {
 //				.call();
 //			}
 //			else{
+				logger.info("Trying to pull files from: " + branch);
 				PullCommand pull = repo.pull()
 						.setCredentialsProvider(credentialProvider)
 						.setRemoteBranchName(branch)
@@ -88,7 +87,8 @@ public class GitApiRepository implements ApiRepository {
 			repo = Git.cloneRepository().setDirectory(new File(repositoryConfiguration.getDirectory()))
 					.setURI(repositoryConfiguration.getUri())
 					.setCredentialsProvider(credentialProvider )
-					.setBranch(branch).call();
+					.setBranch(branch)
+					.call();
 			initRepoConfig();
 			return true;
 		} catch (Exception e2) {
@@ -113,6 +113,8 @@ public class GitApiRepository implements ApiRepository {
 
 	private void initRepoConfig() throws IOException {
 		StoredConfig config = repo.getRepository().getConfig();
+		config.setString("core", null, "autocrlf", "false");
+		config.setString("core", null, "longpaths", "true");
 		config.setString("remote", Constants.DEFAULT_REMOTE_NAME, "url", repositoryConfiguration.getUri()+".git");
 		config.setString("remote", Constants.DEFAULT_REMOTE_NAME, "fetch", "+refs/heads/*:refs/remotes/origin/*");
 		config.setString("branch", branch, "remote", Constants.DEFAULT_REMOTE_NAME);
@@ -128,11 +130,6 @@ public class GitApiRepository implements ApiRepository {
 
 		addCommand.addFilepattern(environment.getEnvDir());
 		addCommand.call();
-		Status status = repo.status().call();
-		Set<String> s = status.getAdded();
-		Set<String> s1 = status.getChanged();
-		Set<String> s2 = status.getUntracked();
-		Set<String> s3 = status.getModified();
 
 		logger.info("Trying to commit files for environment: " + environment.getReferenceName());
 		CommitCommand commit = repo.commit();
@@ -149,8 +146,27 @@ public class GitApiRepository implements ApiRepository {
 
 		logger.info("Environment " + environment.getReferenceName() + " updated successfully");
 	}
+	
+	private void updateReadme() throws Exception {
+		AddCommand addCommand = repo.add();
 
-	@Override
+		addCommand.addFilepattern("README.md");
+		addCommand.call();
+
+		CommitCommand commit = repo.commit();
+		//commit.setCredentialsProvider(credentialProvider);
+		commit.setMessage("Update README.");
+		commit.call();
+
+		PushCommand push = repo.push()
+				.setRemote(Constants.DEFAULT_REMOTE_NAME)
+				.add(branch)
+				.setCredentialsProvider(credentialProvider);
+		push.call();
+
+		logger.info("Readme updated successfully");
+	}
+
 	public void update() throws Exception {
 		for(String envDir: repositoryConfiguration.getEnvironmentDirEntries()){
 			try {
@@ -163,6 +179,8 @@ public class GitApiRepository implements ApiRepository {
 				logger.error("", e);
 			}
 		}
+		
+		updateReadme();
 	}
 
 }

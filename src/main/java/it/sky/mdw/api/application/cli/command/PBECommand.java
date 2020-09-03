@@ -17,7 +17,6 @@ public class PBECommand implements Runnable{
 	@Parameters(type=String.class, arity="1")
 	private String plainText;
 
-	@Override
 	public void run() {
 		try {
 			System.out.println(new String(PBE.getInstance().encrypt(plainText.getBytes())));

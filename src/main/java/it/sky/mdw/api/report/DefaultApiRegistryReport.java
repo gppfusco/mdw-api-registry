@@ -21,7 +21,6 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 
 	private static Logger logger = Logger.getLogger(DefaultApiRegistryReport.class);
 
-	@Override
 	public <C extends ReportConfiguration> void report(C reportConfiguration) throws Exception {
 		if(reportConfiguration instanceof DefaultReportConfiguration){
 			DefaultReportConfiguration conf = (DefaultReportConfiguration) reportConfiguration;
@@ -52,7 +51,7 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 		logger.info("Starting to document api registry...");
 		Registry osbRegistry = osbEvironment.getRegistry();
 		Registry esbRegistry = esbEvironment.getRegistry();
-		File index = new File(explorerLocalBasePath_f + File.separator + "index.md");
+		File index = new File(explorerLocalBasePath_f + File.separator + "README.md");
 		StringBuilder builder = new StringBuilder();
 
 		builder.append(new Heading("Introduction", 3));

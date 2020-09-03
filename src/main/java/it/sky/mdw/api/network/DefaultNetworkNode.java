@@ -26,7 +26,7 @@ public class DefaultNetworkNode implements NetworkNode {
 		this.label = label;
 		this.value = value;
 		this.properties = properties!=null ? properties : new Properties();
-		successors = new ConcurrentHashMap<>();
+		successors = new ConcurrentHashMap<String, DefaultNetworkNode>();
 	}
 
 	public Map<String, DefaultNetworkNode> getSuccessors() {
@@ -85,7 +85,6 @@ public class DefaultNetworkNode implements NetworkNode {
 		addSuccessor(successor.getLabel(), successor.getValue(), successor.getSuccessors(), successor.getProperties());
 	}
 
-	@Override
 	public void addSuccessor(NetworkNode successor) {
 		Objects.requireNonNull(successor);
 		addSuccessor((DefaultNetworkNode)successor);
@@ -111,7 +110,7 @@ public class DefaultNetworkNode implements NetworkNode {
 
 	@JsonIgnore
 	public Collection<NetworkNode> getAllSuccessors(){
-		Collection<NetworkNode> connections = new ArrayList<>();
+		Collection<NetworkNode> connections = new ArrayList<NetworkNode>();
 		for(NetworkNode t: successors.values()){
 			connections.add(t);
 			connections.addAll(t.getAllSuccessors());
@@ -136,7 +135,6 @@ public class DefaultNetworkNode implements NetworkNode {
 		return false;
 	}
 
-	@Override
 	public Collection<NetworkNode> getClosestSuccessors() {
 		Collection<NetworkNode> c = Collections.emptyList();
 		c.addAll(successors.values());

@@ -22,7 +22,6 @@ public class OSBPipelineProcessor implements Callable<Void>{
 		this.connection = OSBRegistryContext.getInstance().getConnection();
 	}
 
-	@Override
 	public Void call() throws Exception {
 		String resourceName = osbResourceConfiguration.getKeyProperty("Name");
 

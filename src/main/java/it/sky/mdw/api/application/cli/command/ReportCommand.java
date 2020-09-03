@@ -26,7 +26,6 @@ public class ReportCommand implements Runnable {
 			type=String.class)
 	private String reportConfiguration;
 
-	@Override
 	public void run() {
 		try {
 			logger.info("Checking configuration file...");
