@@ -92,6 +92,7 @@ public class RegistryCommand implements Runnable {
 						SkyEnvironment env = new SkyEnvironment();
 						env.setBaseUrl(conf.getProperty(OSBConfigurationKeys.ENV_BASE_URL));
 						env.setReferenceName(conf.getProperty(OSBConfigurationKeys.ENV_NAME));
+						env.setEnvDir(conf.getProperty(OSBConfigurationKeys.ENV_DIR_NAME));
 						env.setRegistry(registry);
 
 						logger.info("Number of apis: " + registry.getApis().size());

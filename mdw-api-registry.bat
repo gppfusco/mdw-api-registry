@@ -14,14 +14,10 @@ ECHO esb_conf = %esb_conf%
 ECHO report_conf = %report_conf%
 ECHO repository_conf = %repository_conf%
 
- 	call java -jar %mdw-api-registry-jar% repository -c=%repository_conf% -a=init
-IF %ERRORLEVEL% EQU 0
-	call java -jar %mdw-api-registry-jar% registry -c=%osb_conf% -r=OSBApiRegistry -l
-IF %ERRORLEVEL% EQU 0
- 	call java -jar %mdw-api-registry-jar% registry -c=%esb_conf% -r=ESBApiRegistry -l
-IF %ERRORLEVEL% EQU 0
- 	call java -jar %mdw-api-registry-jar% report -c=%report_conf% 
-IF %ERRORLEVEL% EQU 0
- 	call java -jar %mdw-api-registry-jar% repository -c=%repository_conf% -a=update
+call java -jar %mdw-api-registry-jar% repository -c=%repository_conf% -a=init
+call java -jar %mdw-api-registry-jar% registry -c=%osb_conf% -r=OSBApiRegistry -l
+call java -jar %mdw-api-registry-jar% registry -c=%esb_conf% -r=ESBApiRegistry -l
+call java -jar %mdw-api-registry-jar% report -c=%report_conf% 
+call java -jar %mdw-api-registry-jar% repository -c=%repository_conf% -a=update
 
 ENDLOCAL

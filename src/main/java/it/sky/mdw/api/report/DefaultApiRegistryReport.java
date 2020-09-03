@@ -81,7 +81,7 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 				.addRow("API Endpoint", "Documentation");
 
 		for(Api<? extends ApiSpecification> api: registry.getApis()){
-			String url = gitHubBaseDoc.toString() + "/" + api.getLocalPath().replace(File.separator, "/");
+			String url = gitHubBaseDoc.toString() + "/tree/master/" + api.getLocalPath().replace(File.separator, "/");
 			try {
 				Link apiLink = new Link("View doc", new URL(url).toString());
 				logger.debug("Adding row for api: " + apiLink);

@@ -25,6 +25,10 @@ public class GitApiRepository implements ApiRepository {
 	private SkyRepositoryConfiguration repositoryConfiguration;
 	private UsernamePasswordCredentialsProvider credentialProvider;
 	private String branch;
+	
+	public GitApiRepository() {
+//		System.setProperty("https.protocols", "TLSv1.1,TLSv1.2");
+	}
 
 	public <C extends RepositoryConfiguration> void init(C repositoryConfiguration) throws Exception {
 		SkyRepositoryConfiguration skyRepoConf = (SkyRepositoryConfiguration) repositoryConfiguration;

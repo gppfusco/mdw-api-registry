@@ -8,8 +8,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.bouncycastle.util.encoders.Base64;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -43,6 +43,8 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 
 	@Override
 	protected Registry doInitializeRegistry(Configuration configuration) throws Exception {
+//		String net = System.getProperty("https.protocols");
+//		System.setProperty("https.protocols", "TLSv1.2");
 		final List<Api<? extends ApiSpecification>> apis = new ArrayList<Api<? extends ApiSpecification>>();
 		String url = configuration.getProperty(ESBConfigurationKeys.API_URL);
 		logger.info("Fetching..." + url);
@@ -53,11 +55,12 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 			String password = isEncryptionEnabled ?
 					new String(PBE.getInstance().decrypt(auth.getPassword().getBytes())) : auth.getPassword();
 			String login = auth.getUsername() + ":" + password;
-			String base64login = new String(Base64.encode(login.getBytes()));
+			String base64login = new String(Base64.encodeBase64(login.getBytes()));
 			doc = Jsoup.connect(url).header("Authorization", "Basic " + base64login).get();	
 		}else{
 			doc = Jsoup.connect(url).get();
 		}
+//		System.setProperty("https.protocols", net);
 
 		Elements tables = doc.body().select("table");
 		Elements links = tables.get(7).select("a[href]");
