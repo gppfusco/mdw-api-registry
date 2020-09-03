@@ -1,3 +1,4 @@
+@echo off
 SETLOCAL
 SET dir=%cd%\src\main\resources\lib\
 call mvn install:install-file -Dfile=%dir%oracle.servicebus.kernel-wls.jar -DgroupId=oracle.servicebus -DartifactId=kernel-wls -Dversion=1.0 -Dpackaging=jar
