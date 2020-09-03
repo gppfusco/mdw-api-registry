@@ -1,11 +1,9 @@
 package it.sky.mdw.api.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import java.io.InputStream;
 
 public class ConfigurationSerializationUtil {
 
@@ -14,10 +12,7 @@ public class ConfigurationSerializationUtil {
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
 		try {
 			return mapper.readValue(is, configurationClass);
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-			return configurationClass.newInstance();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return configurationClass.newInstance();
 		}

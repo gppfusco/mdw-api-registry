@@ -16,24 +16,12 @@ public abstract class AbstractRepositoryConfiguration implements RepositoryConfi
 		return branch;
 	}
 	
-	public void setBranch(String branch) {
-		this.branch = branch;
-	}
-	
 	public boolean isPasswordEncrypted() {
 		return passwordEncrypted;
 	}
 	
-	public void setPasswordEncrypted(boolean passwordEncrypted) {
-		this.passwordEncrypted = passwordEncrypted;
-	}
-	
 	public String getDirectory() {
 		return directory;
-	}
-
-	public void setDirectory(String directory) {
-		this.directory = directory;
 	}
 
 	public String getUri() {

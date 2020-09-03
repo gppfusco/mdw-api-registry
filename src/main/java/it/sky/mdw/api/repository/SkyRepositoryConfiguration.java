@@ -5,17 +5,14 @@ import java.util.List;
 
 public class SkyRepositoryConfiguration extends AbstractRepositoryConfiguration {
 
-	private List<String> environmentDirEntries = new ArrayList<String>();
+    private List<String> environmentDirEntries = new ArrayList<>();
 
-	public SkyRepositoryConfiguration() {
-		super();
-	}
+    public SkyRepositoryConfiguration() {
+        super();
+    }
 
-	public List<String> getEnvironmentDirEntries() {
-		return environmentDirEntries;
-	}
+    public List<String> getEnvironmentDirEntries() {
+        return environmentDirEntries;
+    }
 
-	public void setEnvironmentDirEntries(List<String> environmentDirEntries) {
-		this.environmentDirEntries = environmentDirEntries;
-	}
 }

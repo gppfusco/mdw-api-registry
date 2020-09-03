@@ -1,14 +1,9 @@
 package it.sky.mdw.api.network;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultNetworkNode implements NetworkNode {
 
@@ -26,7 +21,7 @@ public class DefaultNetworkNode implements NetworkNode {
 		this.label = label;
 		this.value = value;
 		this.properties = properties!=null ? properties : new Properties();
-		successors = new ConcurrentHashMap<String, DefaultNetworkNode>();
+		successors = new ConcurrentHashMap<>();
 	}
 
 	public Map<String, DefaultNetworkNode> getSuccessors() {
@@ -43,14 +38,6 @@ public class DefaultNetworkNode implements NetworkNode {
 
 	public void setSuccessors(Map<String, DefaultNetworkNode> successors) {
 		this.successors = successors;
-	}
-
-	public void setValue(Object value) {
-		this.value = value;
-	}
-
-	public void setLabel(String label) {
-		this.label = label;
 	}
 
 	public Properties getProperties() {
@@ -110,7 +97,7 @@ public class DefaultNetworkNode implements NetworkNode {
 
 	@JsonIgnore
 	public Collection<NetworkNode> getAllSuccessors(){
-		Collection<NetworkNode> connections = new ArrayList<NetworkNode>();
+		Collection<NetworkNode> connections = new ArrayList<>();
 		for(NetworkNode t: successors.values()){
 			connections.add(t);
 			connections.addAll(t.getAllSuccessors());
@@ -126,7 +113,7 @@ public class DefaultNetworkNode implements NetworkNode {
 	@Override
 	public boolean equals(Object obj) {
 		try {
-			if(obj!=null && obj instanceof NetworkNode)
+			if(obj instanceof NetworkNode)
 				return ((NetworkNode)obj).getLabel().equals(label);
 		} catch (Exception e) {
 			return false;
@@ -135,10 +122,9 @@ public class DefaultNetworkNode implements NetworkNode {
 		return false;
 	}
 
+	@JsonIgnore
 	public Collection<NetworkNode> getClosestSuccessors() {
-		Collection<NetworkNode> c = Collections.emptyList();
-		c.addAll(successors.values());
-		return c;
+		return new ArrayList<NetworkNode>(successors.values());
 	}
 
 }

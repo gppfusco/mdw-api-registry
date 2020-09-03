@@ -21,7 +21,7 @@ public class RepositoryCommand implements Runnable {
 
 	private static final String INIT = "init";
 	private static final String UPDATE = "update";
-	private static Logger logger = Logger.getLogger(RepositoryCommand.class);
+	private static final Logger logger = Logger.getLogger(RepositoryCommand.class);
 
 	@Option(
 			names={"-c", "--conf"},

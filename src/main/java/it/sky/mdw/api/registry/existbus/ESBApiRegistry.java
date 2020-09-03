@@ -1,5 +1,15 @@
 package it.sky.mdw.api.registry.existbus;
 
+import it.sky.mdw.api.*;
+import it.sky.mdw.api.security.PBE;
+import it.sky.mdw.api.security.SSLHelper;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -8,27 +18,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
-import it.sky.mdw.api.AbstractApiRegistry;
-import it.sky.mdw.api.Api;
-import it.sky.mdw.api.ApiSpecification;
-import it.sky.mdw.api.Environment;
-import it.sky.mdw.api.IntegrationScenario;
-import it.sky.mdw.api.Registry;
-import it.sky.mdw.api.RegistryContext;
-import it.sky.mdw.api.security.PBE;
-import it.sky.mdw.api.Configuration;
-import it.sky.mdw.api.DefaultRegistryContext;
-
 public class ESBApiRegistry extends AbstractApiRegistry {
 
-	private static Logger logger = Logger.getLogger(ESBApiRegistry.class);
+	private static final Logger logger = Logger.getLogger(ESBApiRegistry.class);
 	private RegistryContext registriContext;
 
 	private Authorization findAuthorization(Configuration configuration){
@@ -43,9 +35,12 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 
 	@Override
 	protected Registry doInitializeRegistry(Configuration configuration) throws Exception {
-//		String net = System.getProperty("https.protocols");
-//		System.setProperty("https.protocols", "TLSv1.2");
-		final List<Api<? extends ApiSpecification>> apis = new ArrayList<Api<? extends ApiSpecification>>();
+
+		// Support for java 1.7
+		System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
+		//System.setProperty("javax.net.debug", "all");
+
+		final List<Api<? extends ApiSpecification>> apis = new ArrayList<>();
 		String url = configuration.getProperty(ESBConfigurationKeys.API_URL);
 		logger.info("Fetching..." + url);
 		Document doc;
@@ -56,11 +51,12 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 					new String(PBE.getInstance().decrypt(auth.getPassword().getBytes())) : auth.getPassword();
 			String login = auth.getUsername() + ":" + password;
 			String base64login = new String(Base64.encodeBase64(login.getBytes()));
-			doc = Jsoup.connect(url).header("Authorization", "Basic " + base64login).get();	
+			doc = Jsoup.connect(url)
+					.sslSocketFactory(SSLHelper.socketFactory())
+					.header("Authorization", "Basic " + base64login).get();
 		}else{
 			doc = Jsoup.connect(url).get();
 		}
-//		System.setProperty("https.protocols", net);
 
 		Elements tables = doc.body().select("table");
 		Elements links = tables.get(7).select("a[href]");
@@ -68,7 +64,7 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 		ExecutorService service = Executors.newFixedThreadPool(nThreads);
 
 
-		Collection<ESBAPIProcessor> tasks = new ArrayList<ESBAPIProcessor>();
+		Collection<ESBAPIProcessor> tasks = new ArrayList<>();
 
 		for (Element link : links) {
 			tasks.add(new ESBAPIProcessor(link));

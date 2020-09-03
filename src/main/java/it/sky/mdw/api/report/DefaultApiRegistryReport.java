@@ -19,7 +19,8 @@ import net.steppschuh.markdowngenerator.text.heading.Heading;
 
 public class DefaultApiRegistryReport implements ApiRegistryReport {
 
-	private static Logger logger = Logger.getLogger(DefaultApiRegistryReport.class);
+	private static final Logger logger = Logger.getLogger(DefaultApiRegistryReport.class);
+	private DefaultReportConfiguration reportConfiguration;
 
 	public <C extends ReportConfiguration> void report(C reportConfiguration) throws Exception {
 		if(reportConfiguration instanceof DefaultReportConfiguration){
@@ -31,7 +32,8 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 
 	private void report(DefaultReportConfiguration reportConfiguration) throws Exception {
 		Objects.requireNonNull(reportConfiguration, "Report configuration cannot be null.");
-		Environment osb = null, esb = null;
+		Environment osb, esb;
+		this.reportConfiguration = reportConfiguration;
 		String explorerLocalBasePath, githubURLBaseDoc;
 		try {
 			explorerLocalBasePath = reportConfiguration.getExplorerLocalBasePath();
@@ -59,7 +61,7 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 		builder.append("Find information about web services hosted on [OSB](#osb) and [ESB](#esb). Enjoy!!");
 		builder.append(System.lineSeparator());
 		builder.append(System.lineSeparator());
-		builder.append(new Heading("<a name=\"osb\"></a>MDW Oacle Service Bus", 3));
+		builder.append(new Heading("<a name=\"osb\"></a>MDW Oracle Service Bus", 3));
 		builder.append(System.lineSeparator());
 		builder.append(System.lineSeparator());
 		builder.append(createTableOfAPIs(osbRegistry, gitHubBaseDoc).build());
@@ -81,7 +83,7 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 				.addRow("API Endpoint", "Documentation");
 
 		for(Api<? extends ApiSpecification> api: registry.getApis()){
-			String url = gitHubBaseDoc.toString() + "/tree/master/" + api.getLocalPath().replace(File.separator, "/");
+			String url = gitHubBaseDoc.toString() + "/tree/"+reportConfiguration.getBranch()+"/" + api.getLocalPath().replace(File.separator, "/");
 			try {
 				Link apiLink = new Link("View doc", new URL(url).toString());
 				logger.debug("Adding row for api: " + apiLink);

@@ -17,7 +17,7 @@ import picocli.CommandLine.Option;
 		name="report")
 public class ReportCommand implements Runnable {
 
-	private static Logger logger = Logger.getLogger(ReportCommand.class);
+	private static final Logger logger = Logger.getLogger(ReportCommand.class);
 
 	@Option(
 			names={"-c", "--conf"},

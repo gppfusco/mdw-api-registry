@@ -17,11 +17,7 @@ import org.bouncycastle.util.encoders.Hex;
  */
 public final class PBE {
 
-	private final String salt = "A long, but constant phrase that will be used each time as the salt.";
-	private final int iterations = 2000;
-	private final int keyLength = 256;
 	private final SecureRandom random = new SecureRandom();
-	private String passphrase = "The quick brown fox jumped over the lazy brown dog";
 	private static PBE instance;
 
 	private PBE() {
@@ -35,7 +31,7 @@ public final class PBE {
 	}
 
 	public byte [] encrypt(byte [] plaintext) throws Exception {
-		SecretKey key = generateKey(passphrase);
+		SecretKey key = generateKey();
 
 		Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
 		cipher.init(Cipher.ENCRYPT_MODE, key, random);
@@ -43,14 +39,18 @@ public final class PBE {
 	}
 
 	public byte [] decrypt(byte [] ciphertext) throws Exception {
-		SecretKey key = generateKey(passphrase);
+		SecretKey key = generateKey();
 
 		Cipher cipher = Cipher.getInstance("AES/CTR/NOPADDING");
 		cipher.init(Cipher.DECRYPT_MODE, key, random);
 		return cipher.doFinal(Hex.decode(ciphertext));
 	}
 
-	private SecretKey generateKey(String passphrase) throws Exception {
+	private SecretKey generateKey() throws Exception {
+		String salt = "A long, but constant phrase that will be used each time as the salt.";
+		int iterations = 2000;
+		int keyLength = 256;
+		String passphrase = "The quick brown fox jumped over the lazy brown dog";
 		PBEKeySpec keySpec = new PBEKeySpec(passphrase.toCharArray(), salt.getBytes(), iterations, keyLength);
 		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBEWITHSHA256AND256BITAES-CBC-BC");
 		return keyFactory.generateSecret(keySpec);

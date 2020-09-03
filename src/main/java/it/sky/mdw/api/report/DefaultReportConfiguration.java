@@ -2,9 +2,10 @@ package it.sky.mdw.api.report;
 
 public class DefaultReportConfiguration implements ReportConfiguration {
 
-	private String explorerLocalBasePath, githubURLBaseDoc, osbRegistryFile, esbRegistryFile;
+	private String explorerLocalBasePath, githubURLBaseDoc, osbRegistryFile, esbRegistryFile, branch;
 
 	public DefaultReportConfiguration() {
+		branch = "master";
 	}
 
 	public String getEsbRegistryFile() {
@@ -39,4 +40,11 @@ public class DefaultReportConfiguration implements ReportConfiguration {
 		this.githubURLBaseDoc = githubURLBaseDoc;
 	}
 
+	public String getBranch() {
+		return branch;
+	}
+
+	public void setBranch(String branch) {
+		this.branch = branch;
+	}
 }

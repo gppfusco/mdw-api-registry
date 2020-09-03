@@ -25,7 +25,7 @@ import picocli.CommandLine.Option;
 		name="registry")
 public class RegistryCommand implements Runnable {
 
-	private static Logger logger = Logger.getLogger(RegistryCommand.class);
+	private static final Logger logger = Logger.getLogger(RegistryCommand.class);
 
 	@Option(
 			names={"-c", "--conf"},

@@ -41,12 +41,12 @@ import it.sky.mdw.api.XSDSchema;
 
 public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecification>>{
 
-	private static Logger logger = Logger.getLogger(OSBProxyProcessor.class);
+	private static final Logger logger = Logger.getLogger(OSBProxyProcessor.class);
 
 	private ObjectName osbResourceConfiguration;
 	private String environmentHostName;
-	private MBeanServerConnection connection;
-	private ALSBConfigurationMBean alsbConfigurationMBean;
+	private final MBeanServerConnection connection;
+	private final ALSBConfigurationMBean alsbConfigurationMBean;
 	private String fullApiName;
 
 	public OSBProxyProcessor(ObjectName osbResourceConfiguration, String environmentHostName) {
@@ -202,6 +202,7 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 						if(infoNode != null && infoNode.hasAttributes())
 							api.setAuthentication(infoNode.getAttributes().getNamedItem("xsi:type").getTextContent());
 					} catch (Exception e) {
+						logger.error("", e);
 					}
 
 					try {
@@ -209,8 +210,9 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 								+ "/provider-specific/compression/compression-support").evaluate(doc, XPathConstants.NODE);
 						if(infoNode != null)
 							api.setCompressionSupported(
-									Boolean.valueOf(infoNode.getTextContent()));
+									Boolean.parseBoolean(infoNode.getTextContent()));
 					} catch (Exception e) {
+						logger.error("", e);
 					}
 
 					try {
@@ -218,8 +220,9 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 								+ "/provider-specific/compression/compression-buffering").evaluate(doc, XPathConstants.NODE);
 						if(infoNode != null)
 							api.setBufferingSupported(
-									Boolean.valueOf(infoNode.getTextContent()));
+									Boolean.parseBoolean(infoNode.getTextContent()));
 					} catch (Exception e) {
+						logger.error("", e);
 					}
 				}
 			}
@@ -231,25 +234,24 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 	private DefaultApiSpecification exploreDependencies(String apiEndpoint, String[] dependencies, boolean exportReferenceBytes) throws Exception {
 		SoapApiSpec soapApiSpec = null;
 		RestApiSpec restApiSpec = null;
-		for (int i = 0; i < dependencies.length; i++) {
-			String dependency = dependencies[i];
+		for (String dependency : dependencies) {
 			logger.debug("Dependency found - " + dependency + "\n");
-			if(dependency.startsWith("WSDL")){
-				if(exportReferenceBytes){
-					String normalizedWsdlName = "wsdl_" +dependency.replaceAll("WSDL\\W", "").replaceAll("\\W", "/");
+			if (dependency.startsWith("WSDL")) {
+				if (exportReferenceBytes) {
+					String normalizedWsdlName = "wsdl_" + dependency.replaceAll("WSDL\\W", "").replaceAll("\\W", "/");
 					logger.debug("Asking for Ref: " + normalizedWsdlName);
 					SimpleEntry<Ref, byte[]> wsdlRef = findRef(normalizedWsdlName);
 					logger.debug("Retrieved Ref: " + normalizedWsdlName);
-					if(wsdlRef != null){
+					if (wsdlRef != null) {
 						byte[] bytes = wsdlRef.getValue();
 						soapApiSpec = (SoapApiSpec) extractWsdl(apiEndpoint, bytes, true);
 						List<XSDSchema> xsdRefs = soapApiSpec.getXsdSchemas();
-						for(XSDSchema xsdRef: xsdRefs){
+						for (XSDSchema xsdRef : xsdRefs) {
 							String basePath = xsdRef.getXsdPath();
-							logger.debug("Asking for Ref: " + "xsd_"+basePath);
-							SimpleEntry<Ref, byte[]> xsd = findRef("xsd_"+basePath);
-							logger.debug("Retrieved Ref: " + "xsd_"+basePath);
-							if(xsd!=null){
+							logger.debug("Asking for Ref: " + "xsd_" + basePath);
+							SimpleEntry<Ref, byte[]> xsd = findRef("xsd_" + basePath);
+							logger.debug("Retrieved Ref: " + "xsd_" + basePath);
+							if (xsd != null) {
 								xsdRef.setXsdPath("/" + xsdRef.getXsdPath());
 								byte[] xsdExportedBytes = xsd.getValue();
 								byte[] xsdBytes = extractXsdSchema(xsdExportedBytes);
@@ -257,28 +259,28 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 							}
 						}
 					}
-				}else{
+				} else {
 					String depNormalizedName = dependency.replaceAll("\\W", "/");
 					OSBRegistryContext.getInstance().getApiNetwork().addConnection(apiEndpoint, depNormalizedName);
 				}
 			}
-			if(dependency.startsWith("WADL")){
-				if(exportReferenceBytes){
+			if (dependency.startsWith("WADL")) {
+				if (exportReferenceBytes) {
 					String normalizedWsdlName = "wadl_" + dependency.replaceAll("WADL\\W", "").replaceAll("\\W", "/");
 					logger.debug("Asking for Ref: " + normalizedWsdlName);
 					SimpleEntry<Ref, byte[]> wsdlRef = findRef(normalizedWsdlName);
 					logger.debug("Retrieved Ref: " + normalizedWsdlName);
-					if(wsdlRef != null){
+					if (wsdlRef != null) {
 						byte[] bytes = wsdlRef.getValue();
 						restApiSpec = (RestApiSpec) extractWsdl(apiEndpoint, bytes, false);
 					}
-				}else{
+				} else {
 					String depNormalizedName = dependency.replaceAll("\\W", "/");
 					OSBRegistryContext.getInstance().getApiNetwork().addConnection(apiEndpoint, depNormalizedName);
 				}
-			}else{
+			} else {
 				String depNormalizedName = dependency.replaceAll("\\W", "/");
-				if(exportReferenceBytes)
+				if (exportReferenceBytes)
 					OSBRegistryContext.getInstance().getApiNetwork().addConnection(fullApiName, depNormalizedName);
 				else
 					OSBRegistryContext.getInstance().getApiNetwork().addConnection(apiEndpoint, depNormalizedName);
@@ -305,7 +307,7 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 			byte[] bytes;
 			try {
 				bytes = alsbConfigurationMBean.export(Collections.singleton(ref), false, "");
-				entry = new SimpleEntry<Ref, byte[]>(ref, bytes);
+				entry = new SimpleEntry<>(ref, bytes);
 			} catch (Exception e) {
 				logger.error("Error while exporting bytes for: " + normalizedWsdlName, e);
 			}
@@ -348,7 +350,7 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 						NodeList schemaRef = (NodeList) xPath.compile(typeOfEntry + "/dependencies" + schemaRefPathExpression).evaluate(
 								doc, XPathConstants.NODESET);
 
-						List<XSDSchema> xsdRefs = new ArrayList<XSDSchema>();
+						List<XSDSchema> xsdRefs = new ArrayList<>();
 						for (int i = 0; i < schemaRef.getLength(); i++) {
 							Node nNode = schemaRef.item(i);
 							XSDSchema xsdRef = new XSDSchema(

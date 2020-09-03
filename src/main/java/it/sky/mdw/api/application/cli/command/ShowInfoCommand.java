@@ -35,15 +35,14 @@ public class ShowInfoCommand implements Runnable {
 	@Option(
 			names={"-c", "--conf"},
 			description={"Provide an example of configuration file. The FORMAT parameter must be <json> or <xml> or <txt>"},
-			required=false,
 			paramLabel="FORMAT",
 			parameterConsumer=ShowConfigOption.class)
 	private String conf;
 
 	@Option(
 			names={"-r", "--registry"},
-			description={"Provide the available api registry types. For each registry type show an example of configuration."},
-			required=false)
+			description={"Provide the available api registry types. For each registry type show an example of configuration."}
+	)
 	private boolean registry;
 
 	public void run() {
@@ -85,7 +84,6 @@ public class ShowInfoCommand implements Runnable {
 
 					}
 				} catch (Exception e) {
-					continue;
 				}
 			}
 

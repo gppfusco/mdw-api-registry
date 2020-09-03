@@ -5,12 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -26,6 +21,8 @@ import javax.management.remote.JMXServiceURL;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.log4j.Logger;
 
 import com.bea.wli.sb.management.configuration.ALSBConfigurationMBean;
@@ -47,7 +44,7 @@ import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 
 public class OSBApiRegistry extends AbstractApiRegistry{
 
-	private static Logger logger = Logger.getLogger(OSBApiRegistry.class);
+	private static final Logger logger = Logger.getLogger(OSBApiRegistry.class);
 
 	private String host = "";
 	private Integer port = -1;
@@ -75,8 +72,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 	private MBeanServerConnection getMBeanServerConnection() throws Exception {
 		try {
 			InitialContext ctx = new InitialContext();
-			MBeanServer server = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
-			return server;
+			return (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
 		} catch (Exception e) {
 			JMXConnector jmxcon = initRemoteConnection(host, port, username, password);
 			return jmxcon.getMBeanServerConnection();
@@ -89,7 +85,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		String mserver = "weblogic.management.mbeanservers.domainruntime";
 		JMXServiceURL serviceURL =
 				new JMXServiceURL("t3", hostname, port, jndiroot + mserver);
-		Hashtable<String, String> h = new Hashtable<String, String>();
+		Hashtable<String, String> h = new Hashtable<>();
 		h.put(Context.SECURITY_PRINCIPAL, username);
 		String psw = isEncryptionEnabled ? new String(PBE.getInstance().decrypt(password.getBytes())) : password;
 		h.put(Context.SECURITY_CREDENTIALS, psw);
@@ -101,7 +97,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		try {
 			ObjectName objectName =
 					new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
-			return (DomainRuntimeServiceMBean)MBeanServerInvocationHandler.newProxyInstance(connection,
+			return MBeanServerInvocationHandler.newProxyInstance(connection,
 					objectName);
 		} catch (MalformedObjectNameException e) {
 			logger.error("", e);
@@ -115,7 +111,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 
 	@Override
 	protected Registry doInitializeRegistry(Configuration configuration) throws Exception {
-		final List<Api<? extends ApiSpecification>> apis = new ArrayList<Api<? extends ApiSpecification>>();
+		final List<Api<? extends ApiSpecification>> apis = new ArrayList<>();
 
 		logger.info("Read parameters from configuration...");
 		retrieveParams(configuration);
@@ -133,7 +129,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		// This mbean instance is then used to perform configuration operations in that session.
 		// The mbean instance is destroyed when the corresponding session is activated or discarded.
 		final ALSBConfigurationMBean alsbConfigurationMBean =
-				(ALSBConfigurationMBean)domainRuntimeServiceMBean.findService(ALSBConfigurationMBean.NAME,
+				(ALSBConfigurationMBean) Objects.requireNonNull(domainRuntimeServiceMBean).findService(ALSBConfigurationMBean.NAME,
 						ALSBConfigurationMBean.TYPE,
 						null);
 
@@ -154,11 +150,11 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 
 		ApiNetwork osbNetwork = getRegistryContext().getApiNetwork();
 
-		Collection<Future<Api<? extends ApiSpecification>>> osbProxyProcessors = 
-				new ArrayList<Future<Api<? extends ApiSpecification>>>();
+		Collection<Future<Api<? extends ApiSpecification>>> osbProxyProcessors =
+				new ArrayList<>();
 
-		Collection<Future<Void>> osbPipelineProcessors = 
-				new ArrayList<Future<Void>>();
+		Collection<Future<Void>> osbPipelineProcessors =
+				new ArrayList<>();
 
 		for(ObjectName osbResourceConfiguration: osbResourceConfigurations) {
 			String resourceName = osbResourceConfiguration.getKeyProperty("Name");
@@ -225,6 +221,10 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 	}
 
 	private void compactRepository(Environment environment, Configuration configuration) {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+		mapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
+
 		env_dir_str = configuration.getProperty(ConfigurationKeys.ENV_DIR_NAME);
 		dir_path_str = configuration.getProperty(ConfigurationKeys.BASE_DIR_PATH);
 		repo_dir_str = configuration.getProperty(ConfigurationKeys.REPOSITORY_DIR_NAME);
@@ -237,6 +237,8 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 			for(Api<? extends ApiSpecification> api: environment.getRegistry().getApis()){
 				try {
 					compactApiDirectory(api, repo_dir);
+					mapper.writeValue(new File(dir_path_str + File.separator + api.getLocalPath()
+							+ File.separator + api.getName()+ ".json"), api);
 				} catch (Exception e) {
 					logger.error("", e);
 				}
@@ -296,15 +298,15 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 				if(apiNode != null){
 
 					Properties nodeProp = apiNode.getProperties();
-					String service_type = (String) nodeProp.getProperty("service-type", "no_type");
+					String service_type = nodeProp.getProperty("service-type", "no_type");
 
 					Collection<NetworkNode> connections = apiNode.getAllSuccessors();
 					int numberOfBusinessServices = 0;
-					Collection<String> processedBS = new ArrayList<String>();
+					Collection<String> processedBS = new ArrayList<>();
 					for(NetworkNode t: connections){
 						String label = t.getLabel();
 						Properties prop = t.getProperties();
-						String nodeType = (String) prop.getProperty("nodeType", "no_type");
+						String nodeType = prop.getProperty("nodeType", "no_type");
 						if(nodeType.equals("BusinessService") && 
 								!label.contains("BS_LOG_ENQUEUE") &&
 								!label.contains("BS_JMS_ENQUEUE_LOG_MDW_SERVICE") && 

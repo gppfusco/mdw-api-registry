@@ -21,8 +21,7 @@ public final class EnvironmentSerializationUtil {
 		mapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
 
 		JsonNode jsonNode = mapper.readTree(filePath).findPath("environment");
-		SkyEnvironment env = mapper.treeToValue(jsonNode, SkyEnvironment.class);
 
-		return env;
+		return mapper.treeToValue(jsonNode, SkyEnvironment.class);
 	}	
 }

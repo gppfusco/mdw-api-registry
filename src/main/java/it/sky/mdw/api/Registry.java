@@ -8,7 +8,7 @@ public class Registry {
 	private Collection<Api<? extends ApiSpecification>> apis;
 	
 	public Registry() {
-		apis = new ArrayList<Api<? extends ApiSpecification>>();
+		apis = new ArrayList<>();
 	}
 
 	public Collection<Api<? extends ApiSpecification>> getApis() {

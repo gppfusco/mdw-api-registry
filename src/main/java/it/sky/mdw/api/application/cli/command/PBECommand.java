@@ -12,7 +12,7 @@ import picocli.CommandLine.Parameters;
 		name="pbe")
 public class PBECommand implements Runnable{
 
-	private static Logger logger = Logger.getLogger(PBECommand.class);
+	private static final Logger logger = Logger.getLogger(PBECommand.class);
 
 	@Parameters(type=String.class, arity="1")
 	private String plainText;

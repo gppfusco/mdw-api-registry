@@ -20,7 +20,7 @@ public class DefaultApiSpecification implements ApiSpecification {
 	public DefaultApiSpecification(String apiSpecEndpoint) {
 		super();
 		this.apiSpecEndpoint = apiSpecEndpoint;
-		this.xsdSchemas = new ArrayList<XSDSchema>();
+		this.xsdSchemas = new ArrayList<>();
 	}
 
 	public List<XSDSchema> getXsdSchemas() {

@@ -14,7 +14,7 @@ import it.sky.mdw.api.network.NetworkNode;
 
 public abstract class AbstractApiRegistry implements ApiRegistry{
 
-	private static Logger logger = Logger.getLogger(AbstractApiRegistry.class);
+	private static final Logger logger = Logger.getLogger(AbstractApiRegistry.class);
 	protected String dir_path_str, env_dir_str, repo_dir_str, wadl_dir_str, wsdl_dir_str,  xsd_dir_str;
 	protected boolean isEncryptionEnabled = false;
 	protected int nThreads = 16;
@@ -22,9 +22,9 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 	public Registry initializeRegistry(Configuration configuration) throws Exception {
 		Objects.requireNonNull(configuration, "Configuration cannot be null.");
 		if(configuration.containsKey(ConfigurationKeys.ENCRYPTION_ENABLED))
-			isEncryptionEnabled = Boolean.valueOf(configuration.getProperty(ConfigurationKeys.ENCRYPTION_ENABLED, "false"));
+			isEncryptionEnabled = Boolean.parseBoolean(configuration.getProperty(ConfigurationKeys.ENCRYPTION_ENABLED, "false"));
 		if(configuration.containsKey(ConfigurationKeys.NUMBER_OF_THREADS))
-			nThreads = Integer.valueOf(configuration.getProperty(ConfigurationKeys.NUMBER_OF_THREADS, "16"));
+			nThreads = Integer.parseInt(configuration.getProperty(ConfigurationKeys.NUMBER_OF_THREADS, "16"));
 		return doInitializeRegistry(configuration);
 	}
 
@@ -66,15 +66,18 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 				if(!api_dir.exists())
 					api_dir.mkdir();
 
+				api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + api.getName());
 				mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + ".json"), api);
 
 				if(registryContext != null){
 					NetworkNode apiNode = registryContext.getApiNetwork().findEntityByApiName(apiName);
 					if(apiNode != null)
-						mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + "_dependencies.json"), apiNode);
+						try {
+							mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + "_dependencies.json"), apiNode);
+						}catch (Exception e){
+							logger.error("", e);
+						}
 				}
-
-				api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + api.getName());
 
 				ApiSpecification apiSpec = api.getApiSpecification();
 
@@ -96,7 +99,7 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 				}
 
 			} catch (Exception e) {
-				continue;
+				logger.error("", e);
 			}
 		}
 
@@ -150,7 +153,6 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 				fos.close();
 			} catch (Exception e) {
 				logger.error("", e);
-				continue;
 			}
 		}
 	}
