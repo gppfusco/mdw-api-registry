@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,7 +15,7 @@ public class DefaultApiNetwork implements ApiNetwork {
 		network = new ConcurrentHashMap<>();
 	}
 
-	public NetworkNode addEntity(String label, Object value, Optional<Properties> properties) {
+	public NetworkNode addEntity(String label, Object value, Properties properties) {
 		Objects.requireNonNull(label);
 		synchronized (network) {
 			DefaultNetworkNode node = new DefaultNetworkNode(label, value, properties);
@@ -28,7 +27,8 @@ public class DefaultApiNetwork implements ApiNetwork {
 				node = network.get(label);
 			}
 
-			return network.put(label, node);
+			network.put(label, node);
+			return node;
 		}
 	}
 
@@ -37,10 +37,12 @@ public class DefaultApiNetwork implements ApiNetwork {
 		Objects.requireNonNull(entityLabelIn);
 		Objects.requireNonNull(entityLabelOut);
 		synchronized (network) {
-			NetworkNode node = network.getOrDefault(entityLabelIn, 
-					(DefaultNetworkNode) addEntity(entityLabelIn, null, Optional.empty()));
-			NetworkNode successor = network.getOrDefault(entityLabelOut, 
-					(DefaultNetworkNode) addEntity(entityLabelOut, null, Optional.empty()));
+			NetworkNode node = network.get(entityLabelIn);
+			if(node == null)
+					node = (DefaultNetworkNode) addEntity(entityLabelIn, null, null);
+			NetworkNode successor = network.get(entityLabelOut);
+			if(successor == null)
+					successor = (DefaultNetworkNode) addEntity(entityLabelOut, null, null);
 
 			node.addSuccessor(successor);
 
@@ -51,16 +53,16 @@ public class DefaultApiNetwork implements ApiNetwork {
 	}
 
 	@Override
-	public Optional<NetworkNode> findEntityByApiName(String entityLabel){
+	public NetworkNode findEntityByApiName(String entityLabel){
 		Objects.requireNonNull(entityLabel);
 		if(network.containsKey(entityLabel))
-			return Optional.of(network.get(entityLabel));
+			return network.get(entityLabel);
 		else{
-			Optional<NetworkNode> value = Optional.empty();
+			NetworkNode value = null;
 			for(DefaultNetworkNode t: network.values()){
-				Optional<NetworkNode> nodeValue = t.findEntityByApiName(entityLabel);
-				if(nodeValue.isPresent()){
-					value = Optional.of(nodeValue.get());
+				NetworkNode nodeValue = t.findEntityByApiName(entityLabel);
+				if(nodeValue != null){
+					value = nodeValue;
 					break;
 				}				
 			}
@@ -73,7 +75,7 @@ public class DefaultApiNetwork implements ApiNetwork {
 	public Collection<NetworkNode> findEntityConnections(String entityLabel) {
 		Objects.requireNonNull(entityLabel);
 		Collection<NetworkNode> connections = new ArrayList<>();
-		NetworkNode node = findEntityByApiName(entityLabel).orElse(null);
+		NetworkNode node = findEntityByApiName(entityLabel);
 		if(node!=null){
 			connections.addAll(node.getAllSuccessors());
 		}

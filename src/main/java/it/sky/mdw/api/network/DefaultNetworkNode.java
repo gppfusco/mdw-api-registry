@@ -2,12 +2,11 @@ package it.sky.mdw.api.network;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -20,13 +19,13 @@ public class DefaultNetworkNode implements NetworkNode {
 	private Map<String, DefaultNetworkNode> successors;
 
 	public DefaultNetworkNode(String label, Object value) {
-		this(label, value, Optional.empty());
+		this(label, value, null);
 	}
 
-	public DefaultNetworkNode(String label, Object value, Optional<Properties> properties) {
+	public DefaultNetworkNode(String label, Object value, Properties properties) {
 		this.label = label;
 		this.value = value;
-		this.properties = properties.orElse(new Properties());
+		this.properties = properties!=null ? properties : new Properties();
 		successors = new ConcurrentHashMap<>();
 	}
 
@@ -62,15 +61,17 @@ public class DefaultNetworkNode implements NetworkNode {
 		this.properties = properties;
 	}
 
-	private void addSuccessor(String label, Object value, Optional<Map<String, DefaultNetworkNode>> optionalSuccessors, Optional<Properties> properties) {
+	private void addSuccessor(String label, Object value, Map<String, DefaultNetworkNode> optionalSuccessors, Properties properties) {
 		synchronized (successors) {
-			DefaultNetworkNode node = successors.getOrDefault(label, new DefaultNetworkNode(label, value));
+			DefaultNetworkNode node = successors.get(label);
+			if(node == null)
+				node = new DefaultNetworkNode(label, value);
 
-			if(optionalSuccessors.isPresent())
-				node.setSuccessors(optionalSuccessors.get());
+			if(optionalSuccessors !=null)
+				node.setSuccessors(optionalSuccessors);
 
-			if(properties.isPresent())
-				node.setProperties(properties.get());
+			if(properties!=null)
+				node.setProperties(properties);
 
 			if(successors.containsKey(label)){
 				DefaultNetworkNode previous = successors.get(label);
@@ -81,7 +82,7 @@ public class DefaultNetworkNode implements NetworkNode {
 	}
 
 	private void addSuccessor(DefaultNetworkNode successor) {
-		addSuccessor(successor.getLabel(), successor.getValue(), Optional.ofNullable(successor.getSuccessors()), Optional.ofNullable(successor.getProperties()));
+		addSuccessor(successor.getLabel(), successor.getValue(), successor.getSuccessors(), successor.getProperties());
 	}
 
 	@Override
@@ -90,15 +91,15 @@ public class DefaultNetworkNode implements NetworkNode {
 		addSuccessor((DefaultNetworkNode)successor);
 	}
 
-	public Optional<NetworkNode> findEntityByApiName(String entityLabel) {
+	public NetworkNode findEntityByApiName(String entityLabel) {
 		Objects.requireNonNull(entityLabel);
 		if(successors.containsKey(entityLabel))
-			return Optional.of(successors.get(entityLabel));
+			return successors.get(entityLabel);
 		else{
-			Optional<NetworkNode> value = Optional.empty();
+			NetworkNode value = null;
 			for(DefaultNetworkNode t: successors.values()){
-				Optional<NetworkNode> nodeValue = t.findEntityByApiName(entityLabel);
-				if(nodeValue.isPresent()){
+				NetworkNode nodeValue = t.findEntityByApiName(entityLabel);
+				if(nodeValue != null){
 					value = nodeValue;
 					break;
 				}				
@@ -111,22 +112,18 @@ public class DefaultNetworkNode implements NetworkNode {
 	@JsonIgnore
 	public Collection<NetworkNode> getAllSuccessors(){
 		Collection<NetworkNode> connections = new ArrayList<>();
-		successors.values().forEach(new Consumer<NetworkNode>() {
-			@Override
-			public void accept(NetworkNode t) {
-				connections.add(t);
-				connections.addAll(t.getAllSuccessors());
-			}
-		});
-
+		for(NetworkNode t: successors.values()){
+			connections.add(t);
+			connections.addAll(t.getAllSuccessors());
+		}
 		return connections;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return Objects.hashCode(label);
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		try {
@@ -135,13 +132,15 @@ public class DefaultNetworkNode implements NetworkNode {
 		} catch (Exception e) {
 			return false;
 		}
-		
+
 		return false;
 	}
 
 	@Override
 	public Collection<NetworkNode> getClosestSuccessors() {
-		return new ArrayList<>(successors.values());
+		Collection<NetworkNode> c = Collections.emptyList();
+		c.addAll(successors.values());
+		return c;
 	}
 
 }

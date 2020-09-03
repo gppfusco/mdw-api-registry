@@ -4,7 +4,6 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -50,7 +49,7 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 	}
 
 	private void report(Environment osbEvironment, Environment esbEvironment, String explorerLocalBasePath_f, URL gitHubBaseDoc) throws Exception {
-		logger.info("Starting to align registry UI...");
+		logger.info("Starting to document api registry...");
 		Registry osbRegistry = osbEvironment.getRegistry();
 		Registry esbRegistry = esbEvironment.getRegistry();
 		File index = new File(explorerLocalBasePath_f + File.separator + "index.md");
@@ -74,7 +73,7 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 
 		FileUtils.writeStringToFile(index, builder.toString(), "UTF-8");
 
-		logger.info("UI alignment completed.");
+		logger.info("Documentation of api registry completed.");
 	}
 
 	private Table.Builder createTableOfAPIs(Registry registry, URL gitHubBaseDoc){
@@ -82,22 +81,19 @@ public class DefaultApiRegistryReport implements ApiRegistryReport {
 				.withAlignments(Table.ALIGN_LEFT, Table.ALIGN_LEFT, Table.ALIGN_LEFT)
 				.addRow("API Endpoint", "Documentation");
 
-		registry.getApis().forEach(new Consumer<Api<? extends ApiSpecification>>() {
-			@Override
-			public void accept(Api<? extends ApiSpecification> api) {
-				String url = gitHubBaseDoc.toString() + "/" + api.getLocalPath().replace(File.separator, "/");
-				try {
-					Link apiLink = new Link("View doc", new URL(url).toString());
-					logger.debug("Adding row for api: " + apiLink);
-					tableBuilder.addRow(
-							new Link(api.getPath(), api.getEndpoint()+api.getPath()), 
-							//new Code(api.getName()), 
-							apiLink);
-				} catch (MalformedURLException e) {
-					logger.error("Error while adding row for api: " + api.toString(), e);
-				}
+		for(Api<? extends ApiSpecification> api: registry.getApis()){
+			String url = gitHubBaseDoc.toString() + "/" + api.getLocalPath().replace(File.separator, "/");
+			try {
+				Link apiLink = new Link("View doc", new URL(url).toString());
+				logger.debug("Adding row for api: " + apiLink);
+				tableBuilder.addRow(
+						new Link(api.getPath(), api.getEndpoint()+api.getPath()), 
+						//new Code(api.getName()), 
+						apiLink);
+			} catch (MalformedURLException e) {
+				logger.error("Error while adding row for api: " + api.toString(), e);
 			}
-		});
+		}
 
 		return tableBuilder;
 	}

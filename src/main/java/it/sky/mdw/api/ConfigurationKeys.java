@@ -17,5 +17,9 @@ public interface ConfigurationKeys {
 	public static final String BASE_DIR_PATH = "base_dir_path";
 
 	public static final String ENV_BASE_URL = "env_host";
+
+	public static final String ENCRYPTION_ENABLED = "encryption_enabled";
+
+	public static final String NUMBER_OF_THREADS = "nThreads";
 	
 }

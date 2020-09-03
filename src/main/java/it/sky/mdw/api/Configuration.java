@@ -18,6 +18,8 @@ public class Configuration extends Properties  {
 		put(ConfigurationKeys.WSDL_DIR_NAME, "wsdl");
 		put(ConfigurationKeys.WADL_DIR_NAME, "wadl");
 		put(ConfigurationKeys.XSD_DIR_NAME, "xsd");
+		put(ConfigurationKeys.ENCRYPTION_ENABLED, false);
+		put(ConfigurationKeys.NUMBER_OF_THREADS, 16);
 	}
 
 	public void storeToJSON(OutputStream out) throws Exception {

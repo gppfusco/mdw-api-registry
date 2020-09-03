@@ -1,6 +1,5 @@
 package it.sky.mdw.api.registry.osb;
 
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
@@ -33,7 +32,7 @@ public class OSBPipelineProcessor implements Callable<Void>{
 
 			OSBRegistryContext.getInstance().getApiNetwork().addEntity(
 					resourceName.replaceAll("\\W", "/"), osbResourceConfiguration,
-					Optional.of(properties));	
+					properties);	
 			try {
 				CompositeDataSupport metadata =
 						(CompositeDataSupport)connection.getAttribute(osbResourceConfiguration,

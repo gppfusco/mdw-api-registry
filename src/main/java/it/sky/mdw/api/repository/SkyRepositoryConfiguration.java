@@ -8,7 +8,7 @@ public class SkyRepositoryConfiguration extends AbstractRepositoryConfiguration 
 	private List<String> environmentDirEntries = new ArrayList<String>();
 
 	public SkyRepositoryConfiguration() {
-		// TODO Auto-generated constructor stub
+		super();
 	}
 
 	public List<String> getEnvironmentDirEntries() {

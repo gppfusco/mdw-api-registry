@@ -3,8 +3,7 @@ package it.sky.mdw.api;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.Objects;
 
 import org.apache.log4j.Logger;
 
@@ -17,6 +16,20 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 
 	private static Logger logger = Logger.getLogger(AbstractApiRegistry.class);
 	protected String dir_path_str, env_dir_str, repo_dir_str, wadl_dir_str, wsdl_dir_str,  xsd_dir_str;
+	protected boolean isEncryptionEnabled = false;
+	protected int nThreads = 16;
+
+	@Override
+	public Registry initializeRegistry(Configuration configuration) throws Exception {
+		Objects.requireNonNull(configuration, "Configuration cannot be null.");
+		if(configuration.containsKey(ConfigurationKeys.ENCRYPTION_ENABLED))
+			isEncryptionEnabled = Boolean.valueOf(configuration.getProperty(ConfigurationKeys.ENCRYPTION_ENABLED, "false"));
+		if(configuration.containsKey(ConfigurationKeys.NUMBER_OF_THREADS))
+			nThreads = Integer.valueOf(configuration.getProperty(ConfigurationKeys.NUMBER_OF_THREADS, "16"));
+		return doInitializeRegistry(configuration);
+	}
+
+	protected abstract Registry doInitializeRegistry(Configuration configuration) throws Exception;
 
 	@Override
 	public void storeFullRegistry(Environment environment, Configuration configuration) throws Exception {
@@ -32,6 +45,11 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 		wsdl_dir_str = configuration.getProperty(ConfigurationKeys.WSDL_DIR_NAME);
 		xsd_dir_str = configuration.getProperty(ConfigurationKeys.XSD_DIR_NAME);
 
+
+		File dir_path = new File(dir_path_str);
+		if(!dir_path.exists())
+			dir_path.mkdir();
+		
 		File env_dir = new File(dir_path_str + File.separator + env_dir_str);
 		if(!env_dir.exists())
 			env_dir.mkdir();
@@ -53,9 +71,9 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 				mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + ".json"), api);
 
 				if(registryContext != null){
-					Optional<NetworkNode> apiNode = registryContext.getApiNetwork().findEntityByApiName(apiName);
-					if(apiNode.isPresent())
-						mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + "_dependencies.json"), apiNode.get());	
+					NetworkNode apiNode = registryContext.getApiNetwork().findEntityByApiName(apiName);
+					if(apiNode != null)
+						mapper.writeValue(new File(api_dir.getAbsolutePath() + File.separator + apiName + "_dependencies.json"), apiNode);
 				}
 
 				api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + api.getName());
@@ -157,12 +175,8 @@ public abstract class AbstractApiRegistry implements ApiRegistry{
 		if(!env_dir.exists())
 			env_dir.mkdir();
 
-		environment.getRegistry().getApis().forEach(new Consumer<Api<? extends ApiSpecification>>() {
-			@Override
-			public void accept(Api<? extends ApiSpecification> api) {
-				api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + api.getName());
-			}
-		});
+		for(Api<? extends ApiSpecification> api: environment.getRegistry().getApis())
+			api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + api.getName());
 
 		mapper.writeValue(new File(env_dir + File.separator + environment.getReferenceName() + ".json"), environment);		
 	}

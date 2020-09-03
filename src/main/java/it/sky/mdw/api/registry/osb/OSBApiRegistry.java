@@ -7,17 +7,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
@@ -94,7 +91,8 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 				new JMXServiceURL("t3", hostname, port, jndiroot + mserver);
 		Hashtable<String, String> h = new Hashtable<String, String>();
 		h.put(Context.SECURITY_PRINCIPAL, username);
-		h.put(Context.SECURITY_CREDENTIALS, new String(PBE.getInstance().decrypt(password.getBytes())));
+		String psw = isEncryptionEnabled ? new String(PBE.getInstance().decrypt(password.getBytes())) : password;
+		h.put(Context.SECURITY_CREDENTIALS, psw);
 		h.put(JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES, "weblogic.management.remote");
 		return JMXConnectorFactory.connect(serviceURL, h);
 	}
@@ -117,7 +115,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 	}
 
 	@Override
-	public Registry initializeRegistry(Configuration configuration) throws Exception {
+	protected Registry doInitializeRegistry(Configuration configuration) throws Exception {
 		final List<Api<? extends ApiSpecification>> apis = new ArrayList<Api<? extends ApiSpecification>>();
 
 		logger.info("Read parameters from configuration...");
@@ -146,7 +144,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 
 		OSBRegistryContext.getInstance().initializeContext(alsbConfigurationMBean, connection);
 
-		ExecutorService executor = Executors.newWorkStealingPool();
+		ExecutorService executor = Executors.newFixedThreadPool(nThreads);
 
 		MapOfOSBReference mapOfRefs = MapOfOSBReference.getInstance();
 		mapOfRefs.onStart(alsbConfigurationMBean);
@@ -172,7 +170,6 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 									new OSBProxyProcessor(osbResourceConfiguration, env_base_url)));
 				} catch (Exception e) {
 					logger.error("", e);
-					continue;
 				}
 			}
 			else if(resourceName.startsWith("Pipeline$") || resourceName.startsWith("PipelineTemplate$")){
@@ -181,7 +178,6 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 							executor.submit(new OSBPipelineProcessor(osbResourceConfiguration)));
 				} catch (Exception e) {
 					logger.error("", e);
-					continue;
 				}
 			}
 			else if(resourceName.startsWith("BusinessService$")){
@@ -189,30 +185,27 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 				properties.put("nodeType", "BusinessService");
 
 				String normalizedName = resourceName.replaceAll("\\W", "/");
-				osbNetwork.addEntity(normalizedName, osbResourceConfiguration, Optional.of(properties));	
+				osbNetwork.addEntity(normalizedName, osbResourceConfiguration, properties);	
 			}
 			else {
 				String normalizedName = resourceName.replaceAll("\\W", "/");
-				osbNetwork.addEntity(normalizedName, osbResourceConfiguration, Optional.empty());	
+				osbNetwork.addEntity(normalizedName, osbResourceConfiguration, null);	
 			}
 		}
 
-		osbProxyProcessors.forEach(new Consumer<Future<Api<? extends ApiSpecification>>>() {
-			public void accept(Future<Api<? extends ApiSpecification>> t) {
-				Api<? extends ApiSpecification> api;
-				try {
-					api = t.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-					if(api!=null && api.getApiSpecification()!=null){
-						IntegrationScenario intScenario = getIntegrationScenario(api);
-						api.setIntegrationScenario(intScenario);
-						apis.add(api);
-					}
-				} catch (Exception e) {
-					logger.error("", e);
-				} 
-			}
-
-		});
+		for(Future<Api<? extends ApiSpecification>> t: osbProxyProcessors) {
+			Api<? extends ApiSpecification> api;
+			try {
+				api = t.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+				if(api!=null && api.getApiSpecification()!=null){
+					IntegrationScenario intScenario = getIntegrationScenario(api);
+					api.setIntegrationScenario(intScenario);
+					apis.add(api);
+				}
+			} catch (Exception e) {
+				logger.error("", e);
+			} 
+		}
 
 		executor.shutdown();
 		try {
@@ -247,7 +240,6 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 					compactApiDirectory(api, repo_dir);
 				} catch (Exception e) {
 					logger.error("", e);
-					continue;
 				}
 			}
 		}
@@ -272,10 +264,8 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 				Path destPath = newFile.toPath();
 				Files.walkFileTree(srcPath, new CopyDirVisitor(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING));
 
-				Files.walk(srcPath)
-				.sorted(Comparator.reverseOrder())
-				.map(Path::toFile)
-				.forEach(File::delete);
+				if(!deleteDirectory(file))
+					logger.debug("Directory cannot be deleted: " + file.getAbsolutePath());
 				logger.debug("Deleted directory: " + path);
 
 				api.setLocalPath(env_dir_str + File.separator + repo_dir_str + File.separator + 
@@ -284,16 +274,31 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 		}
 	}
 
+	private boolean deleteDirectory(File directoryToBeDeleted) {
+	    try {
+	    	File[] allContents = directoryToBeDeleted.listFiles();
+		    if (allContents != null) {
+		        for (File file : allContents) {
+		            deleteDirectory(file);
+		        }
+		    }
+		    return directoryToBeDeleted.delete();
+		} catch (Exception e) {
+			logger.error("", e);
+			return false;
+		}
+	}
+	
 	@Override
 	public IntegrationScenario getIntegrationScenario(Api<? extends ApiSpecification> api) {
 		RegistryContext registryContext = getRegistryContext();
 		if(registryContext != null){
 			try {
-				NetworkNode apiNode = registryContext.getApiNetwork().findEntityByApiName(api.getName()).orElse(null);
+				NetworkNode apiNode = registryContext.getApiNetwork().findEntityByApiName(api.getName());
 				if(apiNode != null){
 
 					Properties nodeProp = apiNode.getProperties();
-					String service_type = (String) nodeProp.getOrDefault("service-type", "no_type");
+					String service_type = (String) nodeProp.getProperty("service-type", "no_type");
 
 					Collection<NetworkNode> connections = apiNode.getAllSuccessors();
 					int numberOfBusinessServices = 0;
@@ -301,7 +306,7 @@ public class OSBApiRegistry extends AbstractApiRegistry{
 					for(NetworkNode t: connections){
 						String label = t.getLabel();
 						Properties prop = t.getProperties();
-						String nodeType = (String) prop.getOrDefault("nodeType", "no_type");
+						String nodeType = (String) prop.getProperty("nodeType", "no_type");
 						if(nodeType.equals("BusinessService") && 
 								!label.contains("BS_LOG_ENQUEUE") &&
 								!label.contains("BS_JMS_ENQUEUE_LOG_MDW_SERVICE") && 

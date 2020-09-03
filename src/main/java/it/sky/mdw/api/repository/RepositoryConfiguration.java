@@ -9,4 +9,8 @@ public interface RepositoryConfiguration {
 	String getUsername();
 	
 	String getPassword();
+	
+	boolean isPasswordEncrypted();
+	
+	String getBranch();
 }

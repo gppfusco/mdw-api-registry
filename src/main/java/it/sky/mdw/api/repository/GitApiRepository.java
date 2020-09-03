@@ -2,13 +2,16 @@ package it.sky.mdw.api.repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.eclipse.jgit.api.AddCommand;
 import org.eclipse.jgit.api.CommitCommand;
+import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PushCommand;
+import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -23,6 +26,7 @@ public class GitApiRepository implements ApiRepository {
 	private Git repo;
 	private SkyRepositoryConfiguration repositoryConfiguration;
 	private UsernamePasswordCredentialsProvider credentialProvider;
+	private String branch;
 
 	@Override
 	public <C extends RepositoryConfiguration> void init(C repositoryConfiguration) throws Exception {
@@ -32,25 +36,46 @@ public class GitApiRepository implements ApiRepository {
 
 	private void init(SkyRepositoryConfiguration repositoryConfiguration) throws Exception {
 		this.repositoryConfiguration = repositoryConfiguration;
+		branch = repositoryConfiguration.getBranch();
 		credentialProvider = new UsernamePasswordCredentialsProvider(repositoryConfiguration.getUsername(), 
-				new String(PBE.getInstance().decrypt(
-						repositoryConfiguration.getPassword().getBytes())));
+				repositoryConfiguration.isPasswordEncrypted() ? new String(PBE.getInstance().decrypt(
+						repositoryConfiguration.getPassword().getBytes())) : repositoryConfiguration.getPassword());
 
 		if(!open())
 			if(!cloneRepo())
 				init();
 	}
 
+	private boolean checkBranch(){
+		try {
+//			boolean existsBranch = repo.branchList().call().contains(branch);
+//			if(!existsBranch){
+//				// create branch
+//				repo.branchCreate()
+//				.setName(branch)
+//				.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
+//				.setStartPoint(Constants.HEAD)
+//				.call();
+//			}
+//			else{
+				PullCommand pull = repo.pull()
+						.setCredentialsProvider(credentialProvider)
+						.setRemoteBranchName(branch)
+						.setRemote(Constants.DEFAULT_REMOTE_NAME);
+				pull.call();				
+//			}
+			return true;
+		} catch (Exception e) {
+			logger.error("", e);
+			return false;
+		}
+	}
+
 	private boolean open(){
 		try {
 			logger.info("Trying to open repository " + repositoryConfiguration.getDirectory());
 			repo = Git.open(new File(repositoryConfiguration.getDirectory()));
-			PullCommand pull = repo.pull()
-					.setCredentialsProvider(credentialProvider)
-					.setRemoteBranchName(Constants.MASTER)
-					.setRemote(Constants.DEFAULT_REMOTE_NAME);
-			pull.call();
-			return true;
+			return checkBranch();
 		} catch (Exception e) {
 			logger.error("", e);
 			return false;
@@ -63,7 +88,7 @@ public class GitApiRepository implements ApiRepository {
 			repo = Git.cloneRepository().setDirectory(new File(repositoryConfiguration.getDirectory()))
 					.setURI(repositoryConfiguration.getUri())
 					.setCredentialsProvider(credentialProvider )
-					.setBranch(Constants.MASTER).call();
+					.setBranch(branch).call();
 			initRepoConfig();
 			return true;
 		} catch (Exception e2) {
@@ -79,12 +104,7 @@ public class GitApiRepository implements ApiRepository {
 					.setDirectory(new File(repositoryConfiguration.getDirectory()))
 					.call();
 			initRepoConfig();
-			PullCommand pull = repo.pull()
-					.setCredentialsProvider(credentialProvider)
-					.setRemoteBranchName(Constants.MASTER)
-					.setRemote(Constants.DEFAULT_REMOTE_NAME);
-			pull.call();
-			return true;
+			return checkBranch();
 		} catch (Exception e) {
 			logger.error("", e);
 			return false;
@@ -95,41 +115,52 @@ public class GitApiRepository implements ApiRepository {
 		StoredConfig config = repo.getRepository().getConfig();
 		config.setString("remote", Constants.DEFAULT_REMOTE_NAME, "url", repositoryConfiguration.getUri()+".git");
 		config.setString("remote", Constants.DEFAULT_REMOTE_NAME, "fetch", "+refs/heads/*:refs/remotes/origin/*");
-		config.setString("branch", Constants.MASTER, "remote", Constants.DEFAULT_REMOTE_NAME);
-		config.setString("branch", Constants.MASTER, Constants.ATTR_MERGE, Constants.R_HEADS + "master");
+		config.setString("branch", branch, "remote", Constants.DEFAULT_REMOTE_NAME);
+		config.setString("branch", branch, "merge", Constants.R_HEADS + branch);
 		config.setString("user", null, "name", repositoryConfiguration.getUsername());
 		config.save();
+		logger.info("Git configuration created." + System.lineSeparator() + config.toText());
 	}
 
 	private void update(Environment environment) throws Exception {
+		logger.info("Trying to add files for environment: " + environment.getReferenceName());
 		AddCommand addCommand = repo.add();
 
 		addCommand.addFilepattern(environment.getEnvDir());
 		addCommand.call();
+		Status status = repo.status().call();
+		Set<String> s = status.getAdded();
+		Set<String> s1 = status.getChanged();
+		Set<String> s2 = status.getUntracked();
+		Set<String> s3 = status.getModified();
 
+		logger.info("Trying to commit files for environment: " + environment.getReferenceName());
 		CommitCommand commit = repo.commit();
-		commit.setCredentialsProvider(credentialProvider);
+		//commit.setCredentialsProvider(credentialProvider);
 		commit.setMessage("Registry documentation update.");
 		commit.call();
 
+		logger.info("Trying to push files for environment: " + environment.getReferenceName());
 		PushCommand push = repo.push()
 				.setRemote(Constants.DEFAULT_REMOTE_NAME)
-				.add(Constants.MASTER)
-				.setCredentialsProvider(credentialProvider)
-				.setAtomic(true);
+				.add(branch)
+				.setCredentialsProvider(credentialProvider);
 		push.call();
+
+		logger.info("Environment " + environment.getReferenceName() + " updated successfully");
 	}
 
 	@Override
 	public void update() throws Exception {
 		for(String envDir: repositoryConfiguration.getEnvironmentDirEntries()){
 			try {
+				logger.info("Loading environment: " + envDir);
 				Environment env = EnvironmentSerializationUtil.unmarshall(new File(
 						repositoryConfiguration.getDirectory() + File.separator + envDir));
+				logger.info("Environment " + envDir + " loaded");
 				update(env);
 			} catch (Exception e) {
 				logger.error("", e);
-				continue;
 			}
 		}
 	}

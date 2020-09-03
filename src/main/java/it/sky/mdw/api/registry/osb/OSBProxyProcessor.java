@@ -6,7 +6,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
@@ -97,7 +96,7 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 					String apiPath = ("/" + url).replace("//" ,"/");
 
 					OSBRegistryContext.getInstance().getApiNetwork().addEntity(
-							fullApiName, osbResourceConfiguration, Optional.of(properties));
+							fullApiName, osbResourceConfiguration, properties);
 
 					if(servicetype.equals("SOAP")){
 
@@ -151,7 +150,7 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 					else{
 						OSBRegistryContext.getInstance().getApiNetwork().addEntity(
 								resourceName.replaceAll("\\W", "/"), osbResourceConfiguration,
-								Optional.of(properties));
+								properties);
 						exploreDependencies(
 								resourceName.replaceAll("\\W", "/"), 
 								dependencies, false);
@@ -160,7 +159,7 @@ public class OSBProxyProcessor implements Callable<Api<? extends ApiSpecificatio
 				{
 					OSBRegistryContext.getInstance().getApiNetwork().addEntity(
 							resourceName.replaceAll("\\W", "/"), osbResourceConfiguration,
-							Optional.of(properties));
+							properties);
 					exploreDependencies(
 							resourceName.replaceAll("\\W", "/"), 
 							dependencies, false);

@@ -1,12 +1,33 @@
 package it.sky.mdw.api.repository;
 
+import org.eclipse.jgit.lib.Constants;
+
 public abstract class AbstractRepositoryConfiguration implements RepositoryConfiguration {
 
-	private String directory, uri, username, password;
+	private String directory, uri, username, password, branch;
+	private boolean passwordEncrypted;
 
 	public AbstractRepositoryConfiguration() {
+		passwordEncrypted = false;
+		branch = Constants.MASTER;
 	}
-
+	
+	public String getBranch() {
+		return branch;
+	}
+	
+	public void setBranch(String branch) {
+		this.branch = branch;
+	}
+	
+	public boolean isPasswordEncrypted() {
+		return passwordEncrypted;
+	}
+	
+	public void setPasswordEncrypted(boolean passwordEncrypted) {
+		this.passwordEncrypted = passwordEncrypted;
+	}
+	
 	public String getDirectory() {
 		return directory;
 	}

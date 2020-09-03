@@ -1,16 +1,15 @@
 package it.sky.mdw.api.registry.existbus;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import org.apache.log4j.Logger;
+import org.bouncycastle.util.encoders.Base64;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -43,7 +42,7 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 	}
 
 	@Override
-	public Registry initializeRegistry(Configuration configuration) throws Exception {
+	protected Registry doInitializeRegistry(Configuration configuration) throws Exception {
 		final List<Api<? extends ApiSpecification>> apis = new ArrayList<Api<? extends ApiSpecification>>();
 		String url = configuration.getProperty(ESBConfigurationKeys.API_URL);
 		logger.info("Fetching..." + url);
@@ -51,8 +50,10 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 		Authorization auth = findAuthorization(configuration);
 		logger.info("Discovering APIs.....");
 		if(auth != null){
-			String login = auth.getUsername() + ":" + new String(PBE.getInstance().decrypt(auth.getPassword().getBytes()));
-			String base64login = new String(Base64.getEncoder().encode(login.getBytes()));
+			String password = isEncryptionEnabled ?
+					new String(PBE.getInstance().decrypt(auth.getPassword().getBytes())) : auth.getPassword();
+			String login = auth.getUsername() + ":" + password;
+			String base64login = new String(Base64.encode(login.getBytes()));
 			doc = Jsoup.connect(url).header("Authorization", "Basic " + base64login).get();	
 		}else{
 			doc = Jsoup.connect(url).get();
@@ -61,7 +62,7 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 		Elements tables = doc.body().select("table");
 		Elements links = tables.get(7).select("a[href]");
 
-		ExecutorService service = Executors.newWorkStealingPool();
+		ExecutorService service = Executors.newFixedThreadPool(nThreads);
 
 
 		Collection<ESBAPIProcessor> tasks = new ArrayList<ESBAPIProcessor>();
@@ -72,22 +73,20 @@ public class ESBApiRegistry extends AbstractApiRegistry {
 
 		try {
 			List<Future<Api<? extends ApiSpecification>>> apisFuture = service.invokeAll(tasks);
-			apisFuture.forEach(new Consumer<Future<Api<? extends ApiSpecification>>>() {
-				public void accept(Future<Api<? extends ApiSpecification>> t) {
-					Api<? extends ApiSpecification> api;
-					try {
-						api = t.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-						if(api!=null){
-							IntegrationScenario intScenario = getIntegrationScenario(api);
-							api.setIntegrationScenario(intScenario);
-							apis.add(api);
-						}
-					} catch (Exception e) {
-						logger.error("", e);
-					} 
-				}
+			for(Future<Api<? extends ApiSpecification>> t: apisFuture){
+				Api<? extends ApiSpecification> api;
+				try {
+					api = t.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+					if(api!=null){
+						IntegrationScenario intScenario = getIntegrationScenario(api);
+						api.setIntegrationScenario(intScenario);
+						apis.add(api);
+					}
+				} catch (Exception e) {
+					logger.error("", e);
+				} 
+			}
 
-			});
 		} catch (InterruptedException e) {
 			logger.error("", e);
 		}

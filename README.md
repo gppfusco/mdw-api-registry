@@ -2,7 +2,7 @@
 # mdw-api-registry
 
 ## Requirements
-- Java: >= 1.8
+- Java: >= 1.7.0_80
 - Maven: 3.6.0
 
 ## Setup
