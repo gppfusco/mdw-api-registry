@@ -16,12 +16,12 @@ public class MdwApiRegistryCLI {
 						"-r=ESBApiRegistry",
 						"-f"
 				};*/
-				args = new String[]{
+				/*args = new String[]{
 						"registry",
 						"-c=osb_it_conf.json",
 						"-r=OSBApiRegistry",
 						"-f"
-				};
+				};*/
 				/*args = new String[]{
 						"repository",
 						"-c=repository.json",
