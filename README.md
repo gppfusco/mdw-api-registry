@@ -45,9 +45,9 @@ Usage: <main class> registry [[-f] [-l]] [-hV] -c=<configurationFile> -r=<regist
 Create a registry for all APIs from server.
   -c, --conf=<configurationFile>
                   Provide configuration file.
-  -f, --full      Specify if the full registry should be stored on file system.
+  -f, --full      Specify if the full registry should be stored on filesystem.
   -h, --help      Show this help message and exit.
-  -l, --light     Specify if only APIs should be stored on file system.
+  -l, --light     Specify if only APIs should be stored on filesystem.
   -r, --registry=<registryType>
                   Provide the registry type for APIs discovering. Example:
                     <OSBApiRegistry> <ESBApiRegistry>.
@@ -185,3 +185,17 @@ Show useful information about commands.
                         registry type show an example of configuration.
   -V, --version       Print version information and exit.
 ```
+
+## Useful scripts
+
+The full process to create the registries, store them on local filesystem and update the remote repository for documentation, is achieved by running `registry`, `report` and `repository` CLI commands.
+To run all above CLI commands it can be executed the script below
+- On Windows: `mdw-api-registry.bat`
+- On Linux: `mdw-api-registry.sh`
+
+The script accept, as input, five arguments:
+- mdw_api_registry_jar_file: path to the mdw-api-registry jar
+- osb_conf_file: path to configuration file for OSB registry
+- esb_conf_file: path to configuration file for ESB registry
+- report_conf_file: path to `report` command configuration file
+- repository_conf_file: path to `repository` command configuration file

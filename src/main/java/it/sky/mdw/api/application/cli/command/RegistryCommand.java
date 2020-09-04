@@ -50,14 +50,14 @@ public class RegistryCommand implements Runnable {
 				names = {"-f", "--full"}, 
 				required = false,
 				type = Boolean.class,
-				description={"Specify if the full registry should be stored on file system."}) 
+				description={"Specify if the full registry should be stored on filesystem."})
 		static boolean fullMode;
 
 		@Option(
 				names = {"-l", "--light"}, 
 				required = false, 
 				type = Boolean.class,
-				description={"Specify if only APIs should be stored on file system."}) 
+				description={"Specify if only APIs should be stored on filesystem."})
 		static boolean lightMode;
 	}
 

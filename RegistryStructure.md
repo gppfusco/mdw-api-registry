@@ -1,8 +1,8 @@
 # Registry structure
 
-### File system structure
+### Filesystem structure
 
-A registry of APIs has the following structure on file system.
+A registry of APIs has the following structure on filesystem.
 ```shell script
 base_dir_path
     |--> env_dir_name

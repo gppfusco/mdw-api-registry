@@ -1,7 +1,7 @@
 #!/bin/bash	
 
 function usage_error() {
-	echo "Usage: mdw-api-registry.cmd"
+	echo "Usage: mdw-api-registry.sh"
 	echo "mdw_api_registry_jar_file"
 	echo "osb_conf_file"
 	echo "esb_conf_file"
