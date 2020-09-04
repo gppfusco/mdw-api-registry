@@ -22,7 +22,8 @@ import picocli.CommandLine.Option;
 @Command(
 		description={"Create a registry for all APIs from server."},
 		mixinStandardHelpOptions=true,
-		name="registry")
+		name="registry",
+		version = "1.0")
 public class RegistryCommand implements Runnable {
 
 	private static final Logger logger = Logger.getLogger(RegistryCommand.class);

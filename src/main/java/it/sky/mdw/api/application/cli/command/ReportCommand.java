@@ -12,9 +12,10 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command(
-		description={"Create index.md for explorer documentation."},
+		description={"Create README.md for explorer documentation."},
 		mixinStandardHelpOptions=true,
-		name="report")
+		name="report",
+		version = "1.0")
 public class ReportCommand implements Runnable {
 
 	private static final Logger logger = Logger.getLogger(ReportCommand.class);

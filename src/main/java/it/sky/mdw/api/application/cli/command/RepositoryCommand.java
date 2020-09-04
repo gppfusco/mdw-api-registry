@@ -16,7 +16,8 @@ import picocli.CommandLine.Option;
 @Command(
 		description={"Initialize and update a repository for the Api registries."},
 		mixinStandardHelpOptions=true,
-		name="repository")
+		name="repository",
+		version = "1.0")
 public class RepositoryCommand implements Runnable {
 
 	private static final String INIT = "init";

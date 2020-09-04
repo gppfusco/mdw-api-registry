@@ -29,7 +29,8 @@ import picocli.CommandLine.Option;
 @Command(
 		description={"Show useful information about commands."},
 		mixinStandardHelpOptions=true,
-		name="info")
+		name="info",
+		version = "1.0")
 public class ShowInfoCommand implements Runnable {
 
 	@Option(

@@ -9,7 +9,8 @@ import picocli.CommandLine.Parameters;
 @Command(
 		description={"Encrypt a given text."},
 		mixinStandardHelpOptions=true,
-		name="pbe")
+		name="pbe",
+		version = "1.0")
 public class PBECommand implements Runnable{
 
 	private static final Logger logger = Logger.getLogger(PBECommand.class);
