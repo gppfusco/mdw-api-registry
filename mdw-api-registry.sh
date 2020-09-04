@@ -22,10 +22,10 @@ function run_mdw_api_registry() {
 	echo "report conf = $report_conf"
 	echo "repository conf = $repository_conf"
 	
-	java -jar $mdw_api_registry_jar repository -c=$repository_conf -a=init
-	java -jar $mdw_api_registry_jar registry -c=$osb_conf -r=OSBApiRegistry -f
-	java -jar $mdw_api_registry_jar registry -c=$esb_conf -r=ESBApiRegistry -f
-	java -jar $mdw_api_registry_jar report -c=$report_conf%
+	java -jar $mdw_api_registry_jar repository -c=$repository_conf -a=init &&
+	java -jar $mdw_api_registry_jar registry -c=$osb_conf -r=OSBApiRegistry -f &&
+	java -jar $mdw_api_registry_jar registry -c=$esb_conf -r=ESBApiRegistry -f &&
+	java -jar $mdw_api_registry_jar report -c=$report_conf% &&
 	java -jar $mdw_api_registry_jar repository -c=$repository_conf -a=update
 }
 
